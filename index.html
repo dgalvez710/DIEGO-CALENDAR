@@ -472,6 +472,34 @@
     min-width: 0;
   }
 
+  .notes-section {
+    margin-top: 22px;
+  }
+  #notesArea {
+    width: 100%;
+    box-sizing: border-box;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    color: var(--text);
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    line-height: 1.5;
+    resize: vertical;
+    min-height: 90px;
+  }
+  #notesArea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .notes-status {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin: 6px 0 0;
+    min-height: 14px;
+  }
+
   .history-block {
     margin-top: 34px;
     border-top: 1px solid var(--panel-border);
@@ -642,6 +670,12 @@
 
   <div id="taskList"></div>
 
+  <div class="notes-section">
+    <p class="section-title">Notes</p>
+    <textarea id="notesArea" placeholder="Anything that doesn't need to be a task, context on a deal, a takeaway from a call, whatever you want to remember." rows="4"></textarea>
+    <p class="notes-status" id="notesStatus"></p>
+  </div>
+
   <div id="archiveSection" style="display:none;">
     <p class="section-title">Completed this week</p>
     <div id="archiveList"></div>
@@ -685,6 +719,8 @@
   const typeSelect = document.getElementById('newTypeSelect');
   const addBtn = document.getElementById('addBtn');
   const statusMsg = document.getElementById('statusMsg');
+  const notesArea = document.getElementById('notesArea');
+  const notesStatus = document.getElementById('notesStatus');
   const filterRow = document.getElementById('filterRow');
   const accountFilter = document.getElementById('accountFilter');
   const priorityFilter = document.getElementById('priorityFilter');
@@ -733,13 +769,16 @@
   };
 
   let taskDocRef = null;
+  let notesDocRef = null;
   let firestoreReady = false;
   let suppressNextSnapshotRender = false;
+  let suppressNextNotesRender = false;
 
   try {
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     taskDocRef = db.collection('taskTracker').doc('main');
+    notesDocRef = db.collection('taskTracker').doc('notes');
     firestoreReady = true;
   } catch (e) {
     firestoreReady = false;
@@ -789,6 +828,60 @@
         statusMsg.textContent = 'Could not sync. Saved on this device only for now.';
       }
     }
+  }
+
+  // Notes: a single running scratchpad, not tied to any particular week.
+  let notesSaveTimer = null;
+
+  async function loadNotes() {
+    const value = await localAdapter.get('notes');
+    if (notesArea) notesArea.value = value || '';
+  }
+
+  async function saveNotes() {
+    const value = notesArea ? notesArea.value : '';
+    await localAdapter.set('notes', value);
+    if (firestoreReady && notesDocRef) {
+      try {
+        suppressNextNotesRender = true;
+        await notesDocRef.set({
+          text: value,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        if (notesStatus) notesStatus.textContent = 'Saved';
+      } catch (e) {
+        if (notesStatus) notesStatus.textContent = 'Could not sync. Saved on this device only for now.';
+      }
+    } else if (notesStatus) {
+      notesStatus.textContent = 'Saved on this device';
+    }
+  }
+
+  function scheduleNotesSave() {
+    if (notesStatus) notesStatus.textContent = 'Saving...';
+    clearTimeout(notesSaveTimer);
+    notesSaveTimer = setTimeout(saveNotes, 800);
+  }
+
+  function startNotesSync() {
+    if (!firestoreReady || !notesDocRef) return;
+    firebase.auth().onAuthStateChanged((user) => {
+      if (!user) return;
+      notesDocRef.onSnapshot(
+        (docSnap) => {
+          if (suppressNextNotesRender) {
+            suppressNextNotesRender = false;
+            return;
+          }
+          // Don't clobber what the person is actively typing on this device.
+          if (document.activeElement === notesArea) return;
+          const text = docSnap.exists ? (docSnap.data().text || '') : '';
+          if (notesArea) notesArea.value = text;
+          localAdapter.set('notes', text);
+        },
+        () => {}
+      );
+    });
   }
 
   function startSync() {
@@ -1569,12 +1662,18 @@
     importFile.value = '';
   };
 
+  if (notesArea) {
+    notesArea.addEventListener('input', scheduleNotesSave);
+  }
+
   (async function init() {
     await loadTasks();
     const moved = rollOverdueForward();
     render();
     startSync();
     if (moved > 0) await saveTasks();
+    await loadNotes();
+    startNotesSync();
   })();
 })();
 </script>

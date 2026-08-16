@@ -1,0 +1,1473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="mobile-web-app-capable" content="yes" />
+<title>Task Tracker</title>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<style>
+  :root {
+    --bg: #16181d;
+    --panel: #1e2128;
+    --panel-border: #2b2f38;
+    --text: #e8e9ec;
+    --text-dim: #8b909c;
+    --accent: #4f8a6f;
+    --accent-dim: #35473f;
+    --danger: #b5544a;
+    --overdue: #c9955a;
+    --high: #c9564a;
+    --medium: #c9955a;
+    --low: #5a8fc9;
+    --internal-ext: #9a7fc9;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 24px 16px 60px;
+  }
+  .wrap { max-width: 640px; margin: 0 auto; }
+
+  header { margin-bottom: 22px; }
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .header-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .header-actions button {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    color: var(--text-dim);
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .header-actions button:hover { color: var(--text); border-color: var(--accent); }
+  .week-label {
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin: 0 0 4px;
+  }
+  h1 {
+    font-size: 22px;
+    font-weight: 650;
+    margin: 0;
+  }
+  .week-summary {
+    font-size: 12.5px;
+    color: var(--text-dim);
+    margin: 10px 0 0;
+  }
+  .week-summary .count-high { color: var(--high); }
+  .week-summary .count-medium { color: var(--medium); }
+  .week-summary .count-low { color: var(--low); }
+
+  .add-form {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 22px;
+  }
+  .add-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .add-row:last-child { margin-bottom: 0; }
+  .add-form input[type="text"] {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--panel-border);
+    color: var(--text);
+    padding: 11px 12px;
+    border-radius: 8px;
+    font-size: 15px;
+    min-width: 0;
+  }
+  .add-form input[type="text"]:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .add-form select {
+    background: var(--bg);
+    border: 1px solid var(--panel-border);
+    color: var(--text);
+    padding: 0 10px;
+    border-radius: 8px;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .add-form button {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 0 18px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .add-form button:active { opacity: 0.85; }
+  .field-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--text-dim);
+    margin: 0 0 3px;
+  }
+  .add-form input[type="date"] {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--panel-border);
+    color: var(--text);
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+  .add-form input[type="date"]:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .field-col { flex: 1; min-width: 0; }
+
+  #micBtn {
+    flex-shrink: 0;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 1px solid var(--panel-border);
+    background: var(--bg);
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+  }
+  #micBtn svg { width: 18px; height: 18px; }
+  #micBtn:hover { color: var(--text); border-color: var(--accent); }
+  #micBtn.listening {
+    color: #fff;
+    background: var(--danger);
+    border-color: var(--danger);
+    animation: pulse 1.2s infinite;
+  }
+  #micBtn.processing {
+    color: #fff;
+    background: var(--accent);
+    border-color: var(--accent);
+    animation: spin 1s linear infinite;
+  }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(181, 84, 74, 0.5); }
+    70% { box-shadow: 0 0 0 9px rgba(181, 84, 74, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(181, 84, 74, 0); }
+  }
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  .voice-status {
+    font-size: 12.5px;
+    color: var(--text-dim);
+    margin: 6px 0 0;
+    min-height: 16px;
+  }
+
+  .section-title {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-dim);
+    margin: 24px 0 8px;
+  }
+
+  .task {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-left: 3px solid var(--panel-border);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 8px;
+  }
+  .task.prio-high { border-left-color: var(--high); background: linear-gradient(90deg, rgba(201, 86, 74, 0.08), var(--panel) 60px); }
+  .task.prio-medium { border-left-color: var(--medium); background: linear-gradient(90deg, rgba(201, 149, 90, 0.08), var(--panel) 60px); }
+  .task.prio-low { border-left-color: var(--low); background: linear-gradient(90deg, rgba(90, 143, 201, 0.08), var(--panel) 60px); }
+  .task.done { opacity: 0.55; }
+  .task .check {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 5px;
+    border: 1.5px solid var(--text-dim);
+    margin-top: 1px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+  }
+  .task.done .check {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .task .check svg { display: none; width: 12px; height: 12px; }
+  .task.done .check svg { display: block; }
+  .task-body { flex: 1; min-width: 0; }
+  .task-text {
+    font-size: 15px;
+    line-height: 1.4;
+    word-break: break-word;
+  }
+  .task.done .task-text { text-decoration: line-through; color: var(--text-dim); }
+  .task-meta {
+    font-size: 12px;
+    color: var(--overdue);
+    margin-top: 3px;
+  }
+  .task-tags {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 5px;
+    flex-wrap: wrap;
+  }
+  .account-tag {
+    font-size: 12px;
+    color: var(--text-dim);
+    background: var(--bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 5px;
+    padding: 2px 7px;
+  }
+  .prio-tag {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border-radius: 5px;
+    padding: 2px 7px;
+  }
+  .prio-tag.prio-high { color: var(--high); background: rgba(201, 86, 74, 0.12); }
+  .prio-tag.prio-medium { color: var(--medium); background: rgba(201, 149, 90, 0.12); }
+  .prio-tag.prio-low { color: var(--low); background: rgba(90, 143, 201, 0.12); }
+  .type-tag {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border-radius: 5px;
+    padding: 2px 7px;
+    color: var(--text-dim);
+    background: rgba(139, 144, 156, 0.12);
+    border: 1px solid var(--panel-border);
+  }
+  .type-tag.type-external { color: var(--internal-ext); }
+  .stakeholder-tag {
+    font-size: 12px;
+    color: var(--text-dim);
+    background: var(--bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 5px;
+    padding: 2px 7px;
+  }
+  .due-tag {
+    font-size: 12px;
+    color: var(--text-dim);
+    background: var(--bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 5px;
+    padding: 2px 7px;
+  }
+  .due-tag.overdue {
+    color: var(--high);
+    border-color: var(--high);
+  }
+  .task-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .task-undo {
+    background: none;
+    border: 1px solid var(--panel-border);
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 12px;
+    line-height: 1;
+    padding: 5px 9px;
+    border-radius: 6px;
+  }
+  .task-undo:hover { color: var(--text); border-color: var(--accent); }
+  .task-del {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    padding: 2px 4px;
+    flex-shrink: 0;
+  }
+  .task-del:hover { color: var(--danger); }
+
+  .empty {
+    color: var(--text-dim);
+    font-size: 14px;
+    padding: 20px 4px;
+    text-align: center;
+  }
+
+  .followup-box {
+    background: var(--accent-dim);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    padding: 12px;
+    margin: 6px 0 14px;
+  }
+  .followup-box p {
+    margin: 0 0 8px;
+    font-size: 13px;
+    color: var(--text);
+  }
+  .followup-box .row { display: flex; gap: 8px; }
+  .followup-box input[type="text"] {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--panel-border);
+    color: var(--text);
+    padding: 9px 10px;
+    border-radius: 6px;
+    font-size: 14px;
+    min-width: 0;
+  }
+  .followup-box select {
+    background: var(--bg);
+    border: 1px solid var(--panel-border);
+    color: var(--text);
+    padding: 0 8px;
+    border-radius: 6px;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+  .followup-box .btns { display: flex; gap: 6px; margin-top: 8px; }
+  .followup-box button {
+    border: none;
+    border-radius: 6px;
+    padding: 7px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .followup-box .save { background: var(--accent); color: #fff; }
+  .followup-box .skip { background: transparent; color: var(--text-dim); border: 1px solid var(--panel-border); }
+
+  .toggle-archive {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 4px 0;
+    margin-top: 8px;
+  }
+  .toggle-archive:hover { color: var(--text); }
+
+  .status {
+    font-size: 12px;
+    color: var(--text-dim);
+    text-align: center;
+    margin-top: 30px;
+  }
+
+  .filter-row {
+    margin-bottom: 12px;
+    display: flex;
+    gap: 8px;
+  }
+  .filter-row select {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    color: var(--text);
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 14px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .history-block {
+    margin-top: 34px;
+    border-top: 1px solid var(--panel-border);
+    padding-top: 18px;
+  }
+  .history-search-row input[type="text"] {
+    width: 100%;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    color: var(--text);
+    padding: 11px 12px;
+    border-radius: 8px;
+    font-size: 15px;
+  }
+  .history-search-row input[type="text"]:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .history-item {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-top: 8px;
+  }
+  .history-item .task-text {
+    font-size: 14px;
+    color: var(--text-dim);
+  }
+  .history-week {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+  .history-empty {
+    color: var(--text-dim);
+    font-size: 13px;
+    padding: 10px 2px;
+  }
+  .history-week-header {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-dim);
+    margin: 16px 0 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .history-week-header:first-child { margin-top: 8px; }
+  .history-date {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+  .history-reopen {
+    background: none;
+    border: 1px solid var(--panel-border);
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 12px;
+    padding: 5px 9px;
+    border-radius: 6px;
+    margin-top: 8px;
+  }
+  .history-reopen:hover { color: var(--text); border-color: var(--accent); }
+
+  @media (max-width: 480px) {
+    body { padding: calc(16px + env(safe-area-inset-top)) 12px calc(60px + env(safe-area-inset-bottom)); }
+    h1 { font-size: 19px; }
+    .header-actions button { padding: 7px 9px; font-size: 11px; }
+    .add-form { padding: 10px; }
+    .task { padding: 11px; }
+  }
+
+  .sync-status {
+    font-size: 11px;
+    color: var(--text-dim);
+    text-align: center;
+    margin-top: 4px;
+  }
+  .sync-status.online::before { content: "\25cf "; color: var(--accent); }
+  .sync-status.offline::before { content: "\25cf "; color: var(--danger); }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="header-top">
+      <div>
+        <p class="week-label" id="weekLabel">Loading week...</p>
+        <h1>This week's tasks</h1>
+      </div>
+      <div class="header-actions">
+        <button type="button" id="exportBtn" title="Download a backup of all tasks">Export</button>
+        <button type="button" id="importBtn" title="Load tasks from a backup file">Import</button>
+        <input type="file" id="importFile" accept="application/json" style="display:none;" />
+      </div>
+    </div>
+    <p class="week-summary" id="weekSummary"></p>
+    <p class="sync-status" id="syncStatus">Connecting...</p>
+  </header>
+
+  <div class="add-form">
+    <div class="add-row">
+      <div class="field-col">
+        <p class="field-label">Account</p>
+        <input type="text" id="newAccountInput" placeholder="Optional" />
+      </div>
+      <div class="field-col">
+        <p class="field-label">Stakeholder</p>
+        <input type="text" id="newStakeholderInput" placeholder="Optional" />
+      </div>
+    </div>
+    <div class="add-row">
+      <input type="text" id="newTaskInput" placeholder="Add a task" />
+      <button type="button" id="micBtn" title="Speak to fill in the form">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+      </button>
+    </div>
+    <p class="voice-status" id="voiceStatus"></p>
+    <div class="add-row">
+      <div class="field-col">
+        <p class="field-label">Due date</p>
+        <input type="date" id="newDueDateInput" />
+      </div>
+      <div class="field-col">
+        <p class="field-label">Priority</p>
+        <select id="newPrioritySelect">
+          <option value="" selected></option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
+        </select>
+      </div>
+    </div>
+    <div class="add-row">
+      <select id="newTypeSelect">
+        <option value="internal" selected>Internal</option>
+        <option value="external">External</option>
+      </select>
+      <button id="addBtn">Add</button>
+    </div>
+  </div>
+
+  <div class="filter-row" id="filterRow" style="display:none;">
+    <select id="accountFilter">
+      <option value="">All accounts</option>
+    </select>
+    <select id="priorityFilter">
+      <option value="">All priorities</option>
+      <option value="high">High</option>
+      <option value="medium">Medium</option>
+      <option value="low">Low</option>
+      <option value="none">No priority</option>
+    </select>
+  </div>
+
+  <div id="taskList"></div>
+
+  <div id="archiveSection" style="display:none;">
+    <p class="section-title">Completed this week</p>
+    <div id="archiveList"></div>
+  </div>
+  <button class="toggle-archive" id="archiveToggle" style="display:none;"></button>
+
+  <div class="history-block">
+    <p class="section-title">Completed tasks</p>
+    <div class="history-search-row">
+      <input type="text" id="historySearch" placeholder="Filter by account, stakeholder, or keyword" />
+    </div>
+    <div id="historyResults"></div>
+  </div>
+
+  <p class="status" id="statusMsg"></p>
+</div>
+
+<script>
+(function () {
+  const listEl = document.getElementById('taskList');
+  const archiveListEl = document.getElementById('archiveList');
+  const archiveSection = document.getElementById('archiveSection');
+  const archiveToggle = document.getElementById('archiveToggle');
+  const weekLabel = document.getElementById('weekLabel');
+  const weekSummary = document.getElementById('weekSummary');
+  const exportBtn = document.getElementById('exportBtn');
+  const importBtn = document.getElementById('importBtn');
+  const importFile = document.getElementById('importFile');
+  const input = document.getElementById('newTaskInput');
+  const micBtn = document.getElementById('micBtn');
+  const voiceStatus = document.getElementById('voiceStatus');
+  const accountInput = document.getElementById('newAccountInput');
+  const stakeholderInput = document.getElementById('newStakeholderInput');
+  const dueDateInput = document.getElementById('newDueDateInput');
+  const prioritySelect = document.getElementById('newPrioritySelect');
+  const typeSelect = document.getElementById('newTypeSelect');
+  const addBtn = document.getElementById('addBtn');
+  const statusMsg = document.getElementById('statusMsg');
+  const filterRow = document.getElementById('filterRow');
+  const accountFilter = document.getElementById('accountFilter');
+  const priorityFilter = document.getElementById('priorityFilter');
+  const historySearch = document.getElementById('historyResults') ? document.getElementById('historySearch') : null;
+  const historyResults = document.getElementById('historyResults');
+
+  let tasks = [];
+  let archiveOpen = false;
+  let pendingFollowup = null; // task id currently showing the follow-up prompt
+  let activeAccountFilter = '';
+  let activePriorityFilter = '';
+
+  function mondayOf(date) {
+    const d = new Date(date);
+    const day = d.getDay(); // 0 Sun .. 6 Sat
+    const diff = (day === 0 ? -6 : 1 - day);
+    d.setDate(d.getDate() + diff);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+
+  function isoDate(d) {
+    return d.toISOString().slice(0, 10);
+  }
+
+  function fmtRange(mondayIso) {
+    const start = new Date(mondayIso + 'T00:00:00');
+    const end = new Date(start);
+    end.setDate(end.getDate() + 6);
+    const opts = { month: 'short', day: 'numeric' };
+    return start.toLocaleDateString('en-US', opts) + ' - ' + end.toLocaleDateString('en-US', opts);
+  }
+
+  const currentWeek = isoDate(mondayOf(new Date()));
+
+  // Firebase config, this is a client-side app key, safe to embed here.
+  // Security comes from Firestore rules, not from hiding this.
+  const firebaseConfig = {
+    apiKey: "AIzaSyB8Ky0P3i4jYo-spMJ5Gyq62MflmTpUv3o",
+    authDomain: "diego-calendar-56369.firebaseapp.com",
+    projectId: "diego-calendar-56369",
+    storageBucket: "diego-calendar-56369.firebasestorage.app",
+    messagingSenderId: "263311641588",
+    appId: "1:263311641588:web:4f925494de495b67fd07a1"
+  };
+
+  let taskDocRef = null;
+  let firestoreReady = false;
+  let suppressNextSnapshotRender = false;
+
+  try {
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    taskDocRef = db.collection('taskTracker').doc('main');
+    firestoreReady = true;
+  } catch (e) {
+    firestoreReady = false;
+  }
+
+  function setSyncStatus(state) {
+    const el = document.getElementById('syncStatus');
+    if (!el) return;
+    el.classList.remove('online', 'offline');
+    if (state === 'online') {
+      el.classList.add('online');
+      el.textContent = 'Synced across your devices';
+    } else if (state === 'offline') {
+      el.classList.add('offline');
+      el.textContent = 'Working offline. Changes here will not sync until reconnected.';
+    } else {
+      el.textContent = 'Connecting...';
+    }
+  }
+
+  // Local fallback storage, used only if Firestore can't be reached.
+  const localAdapter = {
+    async get(key) {
+      try { return localStorage.getItem(key); } catch (e) { return null; }
+    },
+    async set(key, value) {
+      try { localStorage.setItem(key, value); return true; } catch (e) { return null; }
+    }
+  };
+
+  async function loadTasks() {
+    const value = await localAdapter.get('tasks');
+    tasks = value ? JSON.parse(value) : [];
+  }
+
+  async function saveTasks() {
+    await localAdapter.set('tasks', JSON.stringify(tasks));
+    if (firestoreReady && taskDocRef) {
+      try {
+        suppressNextSnapshotRender = true;
+        await taskDocRef.set({
+          tasks: JSON.stringify(tasks),
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      } catch (e) {
+        setSyncStatus('offline');
+        statusMsg.textContent = 'Could not sync. Saved on this device only for now.';
+      }
+    }
+  }
+
+  function startSync() {
+    if (!firestoreReady || !taskDocRef) {
+      setSyncStatus('offline');
+      return;
+    }
+    taskDocRef.onSnapshot(
+      (docSnap) => {
+        if (suppressNextSnapshotRender) {
+          suppressNextSnapshotRender = false;
+          setSyncStatus('online');
+          return;
+        }
+        if (docSnap.exists) {
+          const data = docSnap.data();
+          tasks = data.tasks ? JSON.parse(data.tasks) : [];
+        } else {
+          tasks = [];
+        }
+        localAdapter.set('tasks', JSON.stringify(tasks));
+        const moved = rollOverdueForward();
+        if (moved > 0) saveTasks();
+        setSyncStatus('online');
+        render();
+      },
+      (error) => {
+        setSyncStatus('offline');
+      }
+    );
+  }
+
+
+  function rollOverdueForward() {
+    let moved = 0;
+    tasks.forEach(t => {
+      if (!t.completed && t.week < currentWeek) {
+        t.week = currentWeek;
+        t.rolledOver = true;
+        moved++;
+      }
+    });
+    return moved;
+  }
+
+  function addTask(text, week, rolledOver, account, priority, stakeholder, type, dueDate) {
+    const resolvedWeek = dueDate ? isoDate(mondayOf(new Date(dueDate + 'T00:00:00'))) : (week || currentWeek);
+    const t = {
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+      text: text.trim(),
+      week: resolvedWeek,
+      completed: false,
+      completedAt: null,
+      rolledOver: !!rolledOver,
+      account: account ? account.trim() : '',
+      stakeholder: stakeholder ? stakeholder.trim() : '',
+      priority: priority || '',
+      type: type || 'internal',
+      dueDate: dueDate || ''
+    };
+    tasks.push(t);
+    return t;
+  }
+
+  function render() {
+    weekLabel.textContent = 'Week of ' + fmtRange(currentWeek);
+
+    const thisWeekTasks = tasks.filter(t => t.week === currentWeek);
+    const openCount = thisWeekTasks.filter(t => !t.completed);
+    const highCount = openCount.filter(t => t.priority === 'high').length;
+    const medCount = openCount.filter(t => t.priority === 'medium').length;
+    const lowCount = openCount.filter(t => t.priority === 'low').length;
+    if (openCount.length === 0) {
+      weekSummary.textContent = '';
+    } else {
+      weekSummary.innerHTML = openCount.length + ' open'
+        + (highCount ? ' &middot; <span class="count-high">' + highCount + ' high</span>' : '')
+        + (medCount ? ' &middot; <span class="count-medium">' + medCount + ' medium</span>' : '')
+        + (lowCount ? ' &middot; <span class="count-low">' + lowCount + ' low</span>' : '');
+    }
+
+    // build account filter options from this week's active accounts
+    const accounts = Array.from(new Set(
+      thisWeekTasks.filter(t => !t.completed && t.account).map(t => t.account)
+    )).sort();
+    const prevFilterVal = accountFilter.value;
+    accountFilter.innerHTML = '<option value="">All accounts</option>' +
+      accounts.map(a => '<option value="' + escapeAttr(a) + '">' + escapeHtml(a) + '</option>').join('');
+    accountFilter.value = accounts.includes(activeAccountFilter) ? activeAccountFilter : '';
+    activeAccountFilter = accountFilter.value;
+    priorityFilter.value = activePriorityFilter;
+    filterRow.style.display = thisWeekTasks.some(t => !t.completed) ? 'block' : 'none';
+
+    let active = thisWeekTasks.filter(t => !t.completed);
+    if (activeAccountFilter) {
+      active = active.filter(t => t.account === activeAccountFilter);
+    }
+    if (activePriorityFilter) {
+      active = active.filter(t =>
+        activePriorityFilter === 'none' ? !t.priority : t.priority === activePriorityFilter
+      );
+    }
+    const prioOrder = { high: 0, medium: 1, low: 2 };
+    active = active.slice().sort((a, b) => {
+      const pa = a.priority ? prioOrder[a.priority] : 3;
+      const pb = b.priority ? prioOrder[b.priority] : 3;
+      if (pa !== pb) return pa - pb;
+      return (a.dueDate || '9999').localeCompare(b.dueDate || '9999');
+    });
+    const done = thisWeekTasks.filter(t => t.completed);
+
+    listEl.innerHTML = '';
+    if (active.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'empty';
+      empty.textContent = activeAccountFilter
+        ? 'Nothing open for this account.'
+        : 'Nothing on the list. Add something above.';
+      listEl.appendChild(empty);
+    } else {
+      active.forEach(t => listEl.appendChild(renderTask(t)));
+    }
+
+    archiveListEl.innerHTML = '';
+    done.forEach(t => archiveListEl.appendChild(renderTask(t)));
+    archiveToggle.style.display = done.length ? 'block' : 'none';
+    archiveToggle.textContent = archiveOpen
+      ? 'Hide completed (' + done.length + ')'
+      : 'Show completed (' + done.length + ')';
+    archiveSection.style.display = archiveOpen ? 'block' : 'none';
+
+    renderHistory();
+  }
+
+  function escapeHtml(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+  function escapeAttr(s) {
+    return escapeHtml(s).replace(/"/g, '&quot;');
+  }
+
+  function renderHistory() {
+    const q = (historySearch && historySearch.value || '').trim().toLowerCase();
+    let completed = tasks.filter(t => t.completed);
+    historyResults.innerHTML = '';
+
+    if (completed.length === 0) {
+      const hint = document.createElement('div');
+      hint.className = 'history-empty';
+      hint.textContent = 'Nothing completed yet.';
+      historyResults.appendChild(hint);
+      return;
+    }
+
+    if (q) {
+      completed = completed.filter(t =>
+        (t.account || '').toLowerCase().includes(q) ||
+        (t.stakeholder || '').toLowerCase().includes(q) ||
+        t.text.toLowerCase().includes(q)
+      );
+    }
+
+    if (completed.length === 0) {
+      const none = document.createElement('div');
+      none.className = 'history-empty';
+      none.textContent = 'No completed tasks match that.';
+      historyResults.appendChild(none);
+      return;
+    }
+
+    // group by week, most recent week first
+    const weeks = Array.from(new Set(completed.map(t => t.week))).sort((a, b) => b.localeCompare(a));
+
+    weeks.forEach(week => {
+      const header = document.createElement('div');
+      header.className = 'history-week-header';
+      header.textContent = 'Week of ' + fmtRange(week);
+      historyResults.appendChild(header);
+
+      const weekTasks = completed
+        .filter(t => t.week === week)
+        .sort((a, b) => (b.completedAt || '').localeCompare(a.completedAt || ''));
+
+      weekTasks.forEach(t => {
+        const item = document.createElement('div');
+        item.className = 'history-item';
+        const text = document.createElement('div');
+        text.className = 'task-text';
+        text.textContent = t.text;
+        item.appendChild(text);
+
+        const tags = document.createElement('div');
+        tags.className = 'task-tags';
+        if (t.priority) {
+          const prioTag = document.createElement('span');
+          prioTag.className = 'prio-tag prio-' + t.priority;
+          prioTag.textContent = t.priority;
+          tags.appendChild(prioTag);
+        }
+        const typeTag = document.createElement('span');
+        typeTag.className = 'type-tag type-' + (t.type || 'internal');
+        typeTag.textContent = t.type === 'external' ? 'External' : 'Internal';
+        tags.appendChild(typeTag);
+        if (t.account) {
+          const acctTag = document.createElement('span');
+          acctTag.className = 'account-tag';
+          acctTag.textContent = t.account;
+          tags.appendChild(acctTag);
+        }
+        if (t.stakeholder) {
+          const stakeTag = document.createElement('span');
+          stakeTag.className = 'stakeholder-tag';
+          stakeTag.textContent = t.stakeholder;
+          tags.appendChild(stakeTag);
+        }
+        if (t.dueDate) {
+          const dueTag = document.createElement('span');
+          dueTag.className = 'due-tag';
+          dueTag.textContent = 'Was due ' + new Date(t.dueDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          tags.appendChild(dueTag);
+        }
+        item.appendChild(tags);
+
+        const dateEl = document.createElement('div');
+        dateEl.className = 'history-date';
+        dateEl.textContent = t.completedAt
+          ? 'Completed ' + new Date(t.completedAt + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+          : 'Completion date not recorded';
+        item.appendChild(dateEl);
+
+        const reopen = document.createElement('button');
+        reopen.className = 'history-reopen';
+        reopen.textContent = 'Reopen onto this week';
+        reopen.onclick = async () => {
+          t.completed = false;
+          t.completedAt = null;
+          t.week = currentWeek;
+          await saveTasks();
+          render();
+        };
+        item.appendChild(reopen);
+
+        historyResults.appendChild(item);
+      });
+    });
+  }
+
+  function renderTask(t) {
+    const wrap = document.createElement('div');
+
+    const priority = t.priority || '';
+    const row = document.createElement('div');
+    row.className = 'task' + (priority ? ' prio-' + priority : '') + (t.completed ? ' done' : '');
+
+    const check = document.createElement('div');
+    check.className = 'check';
+    check.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>';
+    check.onclick = () => onToggle(t);
+
+    const body = document.createElement('div');
+    body.className = 'task-body';
+    const text = document.createElement('div');
+    text.className = 'task-text';
+    text.textContent = t.text;
+    body.appendChild(text);
+
+    const tags = document.createElement('div');
+    tags.className = 'task-tags';
+    if (priority) {
+      const prioTag = document.createElement('span');
+      prioTag.className = 'prio-tag prio-' + priority;
+      prioTag.textContent = priority;
+      tags.appendChild(prioTag);
+    }
+    const typeTag = document.createElement('span');
+    typeTag.className = 'type-tag type-' + (t.type || 'internal');
+    typeTag.textContent = t.type === 'external' ? 'External' : 'Internal';
+    tags.appendChild(typeTag);
+    if (t.account) {
+      const acctTag = document.createElement('span');
+      acctTag.className = 'account-tag';
+      acctTag.textContent = t.account;
+      tags.appendChild(acctTag);
+    }
+    if (t.stakeholder) {
+      const stakeTag = document.createElement('span');
+      stakeTag.className = 'stakeholder-tag';
+      stakeTag.textContent = t.stakeholder;
+      tags.appendChild(stakeTag);
+    }
+    if (t.dueDate) {
+      const dueTag = document.createElement('span');
+      const isOverdue = !t.completed && t.dueDate < isoDate(new Date());
+      dueTag.className = 'due-tag' + (isOverdue ? ' overdue' : '');
+      dueTag.textContent = 'Due ' + new Date(t.dueDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      tags.appendChild(dueTag);
+    }
+    body.appendChild(tags);
+
+    if (t.rolledOver && !t.completed) {
+      const meta = document.createElement('div');
+      meta.className = 'task-meta';
+      meta.textContent = 'Carried over from last week';
+      body.appendChild(meta);
+    }
+
+    const actions = document.createElement('div');
+    actions.className = 'task-actions';
+
+    if (t.completed) {
+      const undo = document.createElement('button');
+      undo.className = 'task-undo';
+      undo.textContent = 'Undo';
+      undo.onclick = () => onToggle(t);
+      actions.appendChild(undo);
+    } else {
+      const push = document.createElement('button');
+      push.className = 'task-undo';
+      push.title = 'Push to next week without marking it done';
+      push.textContent = '\u2192 Next wk';
+      push.onclick = async () => {
+        const nextMonday = new Date(t.week + 'T00:00:00');
+        nextMonday.setDate(nextMonday.getDate() + 7);
+        t.week = isoDate(nextMonday);
+        t.rolledOver = false;
+        await saveTasks();
+        render();
+      };
+      actions.appendChild(push);
+    }
+
+    const del = document.createElement('button');
+    del.className = 'task-del';
+    del.textContent = '\u00d7';
+    del.onclick = () => onDelete(t);
+    actions.appendChild(del);
+
+    row.appendChild(check);
+    row.appendChild(body);
+    row.appendChild(actions);
+    wrap.appendChild(row);
+
+    if (pendingFollowup === t.id) {
+      wrap.appendChild(renderFollowupBox(t));
+    }
+
+    return wrap;
+  }
+
+  function renderFollowupBox(t) {
+    const box = document.createElement('div');
+    box.className = 'followup-box';
+
+    const p = document.createElement('p');
+    p.textContent = 'Nice work. Create a follow-up task?';
+    box.appendChild(p);
+
+    const row = document.createElement('div');
+    row.className = 'row';
+    const followInput = document.createElement('input');
+    followInput.type = 'text';
+    followInput.placeholder = 'e.g. Confirm they received the proposal';
+    row.appendChild(followInput);
+    box.appendChild(row);
+
+    const row2 = document.createElement('div');
+    row2.className = 'row';
+    row2.style.marginTop = '6px';
+    const followAccount = document.createElement('input');
+    followAccount.type = 'text';
+    followAccount.placeholder = 'Account name (optional)';
+    followAccount.value = t.account || '';
+    const followStakeholder = document.createElement('input');
+    followStakeholder.type = 'text';
+    followStakeholder.placeholder = 'Stakeholder (optional)';
+    followStakeholder.value = t.stakeholder || '';
+    row2.appendChild(followAccount);
+    row2.appendChild(followStakeholder);
+    box.appendChild(row2);
+
+    const row3 = document.createElement('div');
+    row3.className = 'row';
+    row3.style.marginTop = '6px';
+    const followPriority = document.createElement('select');
+    followPriority.innerHTML = '<option value=""></option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option>';
+    followPriority.value = t.priority || '';
+    const followType = document.createElement('select');
+    followType.innerHTML = '<option value="internal" selected>Internal</option><option value="external">External</option>';
+    followType.value = t.type || 'internal';
+    row3.appendChild(followPriority);
+    row3.appendChild(followType);
+    box.appendChild(row3);
+
+    const btns = document.createElement('div');
+    btns.className = 'btns';
+
+    const save = document.createElement('button');
+    save.className = 'save';
+    save.textContent = 'Add for this week';
+    save.onclick = async () => {
+      if (followInput.value.trim()) {
+        addTask(followInput.value, currentWeek, false, followAccount.value, followPriority.value, followStakeholder.value, followType.value);
+        await saveTasks();
+      }
+      pendingFollowup = null;
+      render();
+    };
+
+    const saveNext = document.createElement('button');
+    saveNext.className = 'skip';
+    saveNext.textContent = 'Add for next week';
+    saveNext.onclick = async () => {
+      if (followInput.value.trim()) {
+        const nextMonday = new Date(currentWeek + 'T00:00:00');
+        nextMonday.setDate(nextMonday.getDate() + 7);
+        addTask(followInput.value, isoDate(nextMonday), false, followAccount.value, followPriority.value, followStakeholder.value, followType.value);
+        await saveTasks();
+      }
+      pendingFollowup = null;
+      render();
+    };
+
+    const skip = document.createElement('button');
+    skip.className = 'skip';
+    skip.textContent = 'No thanks';
+    skip.onclick = () => {
+      pendingFollowup = null;
+      render();
+    };
+
+    btns.appendChild(save);
+    btns.appendChild(saveNext);
+    btns.appendChild(skip);
+    box.appendChild(btns);
+
+    followInput.focus();
+    followInput.onkeydown = (e) => { if (e.key === 'Enter') save.click(); };
+
+    return box;
+  }
+
+  async function onToggle(t) {
+    t.completed = !t.completed;
+    t.completedAt = t.completed ? isoDate(new Date()) : null;
+    if (t.completed) {
+      pendingFollowup = t.id;
+    } else if (pendingFollowup === t.id) {
+      pendingFollowup = null;
+    }
+    await saveTasks();
+    render();
+  }
+
+  async function onDelete(t) {
+    tasks = tasks.filter(x => x.id !== t.id);
+    if (pendingFollowup === t.id) pendingFollowup = null;
+    await saveTasks();
+    render();
+  }
+
+  addBtn.onclick = async () => {
+    if (input.value.trim()) {
+      addTask(input.value, currentWeek, false, accountInput.value, prioritySelect.value, stakeholderInput.value, typeSelect.value, dueDateInput.value);
+      input.value = '';
+      accountInput.value = '';
+      stakeholderInput.value = '';
+      dueDateInput.value = '';
+      prioritySelect.value = '';
+      typeSelect.value = 'internal';
+      await saveTasks();
+      render();
+      input.focus();
+    }
+  };
+  input.onkeydown = (e) => { if (e.key === 'Enter') addBtn.click(); };
+  accountInput.onkeydown = (e) => { if (e.key === 'Enter') addBtn.click(); };
+  stakeholderInput.onkeydown = (e) => { if (e.key === 'Enter') addBtn.click(); };
+
+  archiveToggle.onclick = () => {
+    archiveOpen = !archiveOpen;
+    render();
+  };
+
+  accountFilter.onchange = () => {
+    activeAccountFilter = accountFilter.value;
+    render();
+  };
+
+  priorityFilter.onchange = () => {
+    activePriorityFilter = priorityFilter.value;
+    render();
+  };
+
+  if (historySearch) {
+    historySearch.oninput = () => renderHistory();
+  }
+
+  // Voice capture: speak a task and have it fill in the form fields.
+  const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let recognition = null;
+  let isListening = false;
+
+  if (SpeechRecognitionCtor) {
+    recognition = new SpeechRecognitionCtor();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => {
+      isListening = true;
+      micBtn.classList.add('listening');
+      voiceStatus.textContent = 'Listening... say the task, account, who it is for, priority, or a day it is due.';
+    };
+
+    recognition.onend = () => {
+      isListening = false;
+      micBtn.classList.remove('listening');
+    };
+
+    recognition.onerror = (e) => {
+      isListening = false;
+      micBtn.classList.remove('listening');
+      if (e.error === 'not-allowed' || e.error === 'permission-denied') {
+        voiceStatus.textContent = 'Mic access was blocked. Allow microphone permission and try again.';
+      } else if (e.error === 'no-speech') {
+        voiceStatus.textContent = 'Did not catch anything. Try again.';
+      } else {
+        voiceStatus.textContent = 'Voice input hit an error (' + e.error + ').';
+      }
+    };
+
+    recognition.onresult = (e) => {
+      const transcript = e.results[0][0].transcript;
+      fillFormFromVoice(transcript);
+    };
+
+    micBtn.onclick = () => {
+      if (isListening) {
+        recognition.stop();
+        return;
+      }
+      voiceStatus.textContent = '';
+      try {
+        recognition.start();
+      } catch (e) {
+        voiceStatus.textContent = 'Could not start listening. Try again.';
+      }
+    };
+  } else {
+    // Voice input isn't supported here (this covers iOS Safari, which has
+    // never implemented the browser speech recognition API). Hide the mic
+    // rather than show a button that can't do anything.
+    micBtn.style.display = 'none';
+  }
+
+  // Pulls a due date, priority, account, stakeholder, and type out of a spoken
+  // sentence using plain pattern matching. No network call, so it works the
+  // same whether this file is opened locally or used inside Claude.ai.
+  function parseVoiceTranscript(rawText, todayDate) {
+    let text = rawText.trim();
+    let working = text;
+    const weekdays = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const months = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
+
+    let dueDate = '';
+    let m;
+
+    // explicit numeric date: 8/21 or 8-21-2026
+    m = working.match(/\b(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?\b/);
+    if (m) {
+      const month = parseInt(m[1], 10) - 1;
+      const day = parseInt(m[2], 10);
+      const year = m[3] ? (m[3].length === 2 ? 2000 + parseInt(m[3], 10) : parseInt(m[3], 10)) : todayDate.getFullYear();
+      const d = new Date(year, month, day);
+      if (!isNaN(d.getTime())) {
+        dueDate = isoDate(d);
+        working = working.replace(m[0], ' ');
+      }
+    }
+
+    // month name + day: "August 21" or "Aug 21st"
+    if (!dueDate) {
+      const monthRe = new RegExp('\\b(' + months.join('|') + ')\\.?\\s+(\\d{1,2})(?:st|nd|rd|th)?\\b', 'i');
+      m = working.match(monthRe);
+      if (m) {
+        const monthIdx = months.indexOf(m[1].toLowerCase());
+        const day = parseInt(m[2], 10);
+        let year = todayDate.getFullYear();
+        let d = new Date(year, monthIdx, day);
+        if (d.getTime() < new Date(todayDate.getFullYear(), todayDate.getMonth(), todayDate.getDate()).getTime()) {
+          d = new Date(year + 1, monthIdx, day);
+        }
+        dueDate = isoDate(d);
+        working = working.replace(m[0], ' ');
+      }
+    }
+
+    // tomorrow / today
+    if (!dueDate) {
+      if (/\btomorrow\b/i.test(working)) {
+        const d = new Date(todayDate);
+        d.setDate(d.getDate() + 1);
+        dueDate = isoDate(d);
+        working = working.replace(/\btomorrow\b/i, ' ');
+      } else if (/\btoday\b/i.test(working)) {
+        dueDate = isoDate(todayDate);
+        working = working.replace(/\btoday\b/i, ' ');
+      }
+    }
+
+    // weekday name, with optional "next"
+    if (!dueDate) {
+      const wdRe = new RegExp('\\b(next\\s+)?(' + weekdays.join('|') + ')\\b', 'i');
+      m = working.match(wdRe);
+      if (m) {
+        const targetIdx = weekdays.indexOf(m[2].toLowerCase());
+        const todayIdx = todayDate.getDay();
+        let diff = (targetIdx - todayIdx + 7) % 7;
+        if (diff === 0) diff = 7;
+        if (m[1]) diff += 7;
+        const d = new Date(todayDate);
+        d.setDate(d.getDate() + diff);
+        dueDate = isoDate(d);
+        working = working.replace(m[0], ' ');
+      }
+    }
+
+    // priority
+    let priority = '';
+    if (/\bhigh priority\b|\burgent\b|\basap\b|\bcritical\b/i.test(working)) {
+      priority = 'high';
+      working = working.replace(/\bhigh priority\b|\burgent\b|\basap\b|\bcritical\b/gi, ' ');
+    } else if (/\blow priority\b|\bwhenever\b|\bno rush\b|\bnot urgent\b/i.test(working)) {
+      priority = 'low';
+      working = working.replace(/\blow priority\b|\bwhenever\b|\bno rush\b|\bnot urgent\b/gi, ' ');
+    } else if (/\bmedium priority\b|\bnormal priority\b/i.test(working)) {
+      priority = 'medium';
+      working = working.replace(/\bmedium priority\b|\bnormal priority\b/gi, ' ');
+    }
+
+    // internal vs external
+    let type = 'internal';
+    if (/\bexternal\b|\bclient\b|\bcustomer\b|\bprospect\b/i.test(working)) {
+      type = 'external';
+    }
+    working = working.replace(/\b(external|internal)\b/gi, ' ');
+
+    // stakeholder: "with <Name>"
+    let stakeholder = '';
+    m = working.match(/\bwith\s+([A-Z][\w'-]*(?:\s+[A-Z][\w'-]*){0,2})/);
+    if (m) stakeholder = m[1].trim();
+
+    // account: "at <Company>"
+    let account = '';
+    m = working.match(/\bat\s+([A-Z][\w'&.-]*(?:\s+[A-Z][\w'&.-]*){0,3})/);
+    if (m) account = m[1].trim();
+
+    // fallback: a capitalized phrase leading into "with" ("Agilent Technologies with Ron...")
+    if (!account) {
+      m = working.match(/^\s*([A-Z][\w'&.-]*(?:\s+[A-Z][\w'&.-]*){0,3})\s+with\b/);
+      if (m) account = m[1].trim();
+    }
+
+    // fallback: "for <Company>"
+    if (!account) {
+      m = working.match(/\bfor\s+([A-Z][\w'&.-]*(?:\s+[A-Z][\w'&.-]*){0,3})\b/);
+      if (m) account = m[1].trim();
+    }
+
+    // task text: keep the full sentence, just trim common lead-in filler
+    let task = text.replace(/^(please\s+|remind me to\s+|add a task to\s+|i need to\s+|need to\s+)/i, '').trim();
+    task = task.replace(/\s+/g, ' ');
+    if (task.length) task = task.charAt(0).toUpperCase() + task.slice(1);
+
+    return { task, account, stakeholder, priority, type, dueDate };
+  }
+
+  function fillFormFromVoice(transcript) {
+    const parsed = parseVoiceTranscript(transcript, new Date());
+
+    input.value = parsed.task || transcript;
+    accountInput.value = parsed.account || '';
+    stakeholderInput.value = parsed.stakeholder || '';
+    prioritySelect.value = ['high', 'medium', 'low'].includes(parsed.priority) ? parsed.priority : '';
+    typeSelect.value = parsed.type === 'external' ? 'external' : 'internal';
+    dueDateInput.value = parsed.dueDate || '';
+
+    voiceStatus.textContent = 'Filled in from your voice note, best guess. Double check before hitting Add.';
+  }
+
+  exportBtn.onclick = () => {
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      tasks: tasks
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'task-tracker-backup-' + isoDate(new Date()) + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    statusMsg.textContent = 'Backup downloaded. Load it into an updated version with Import.';
+  };
+
+  importBtn.onclick = () => importFile.click();
+
+  importFile.onchange = async () => {
+    const file = importFile.files[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      const incoming = Array.isArray(parsed) ? parsed : parsed.tasks;
+      if (!Array.isArray(incoming)) throw new Error('bad format');
+
+      const existingIds = new Set(tasks.map(t => t.id));
+      let added = 0;
+      incoming.forEach(t => {
+        if (t && t.id && !existingIds.has(t.id)) {
+          tasks.push(t);
+          existingIds.add(t.id);
+          added++;
+        }
+      });
+      rollOverdueForward();
+      await saveTasks();
+      render();
+      statusMsg.textContent = added > 0
+        ? 'Added ' + added + ' task' + (added === 1 ? '' : 's') + ' from the backup.'
+        : 'That backup did not have any tasks not already here.';
+    } catch (e) {
+      statusMsg.textContent = 'Could not read that file. Make sure it is a backup exported from this app.';
+    }
+    importFile.value = '';
+  };
+
+  (async function init() {
+    await loadTasks();
+    const moved = rollOverdueForward();
+    render();
+    startSync();
+    if (moved > 0) await saveTasks();
+  })();
+})();
+</script>
+</body>
+</html>

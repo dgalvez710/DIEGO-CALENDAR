@@ -26,6 +26,7 @@
     --internal-ext: #9a7fc9;
   }
   * { box-sizing: border-box; }
+  html, body { overflow-x: hidden; max-width: 100%; }
   body {
     background: var(--bg);
     color: var(--text);
@@ -90,10 +91,12 @@
     display: flex;
     gap: 8px;
     margin-bottom: 8px;
+    flex-wrap: wrap;
   }
   .add-row:last-child { margin-bottom: 0; }
   .add-form input[type="text"] {
-    flex: 1;
+    width: 100%;
+    box-sizing: border-box;
     background: var(--bg);
     border: 1px solid var(--panel-border);
     color: var(--text);
@@ -107,13 +110,14 @@
     border-color: var(--accent);
   }
   .add-form select {
+    width: 100%;
+    box-sizing: border-box;
     background: var(--bg);
     border: 1px solid var(--panel-border);
     color: var(--text);
     padding: 0 10px;
     border-radius: 8px;
     font-size: 14px;
-    flex-shrink: 0;
   }
   .add-form button {
     background: var(--accent);
@@ -124,7 +128,17 @@
     font-size: 15px;
     font-weight: 600;
     cursor: pointer;
-    flex-shrink: 0;
+  }
+  #addBtn {
+    flex: 1;
+    min-width: 90px;
+    width: 100%;
+    padding: 13px 18px;
+  }
+  #newTypeSelect {
+    width: auto;
+    flex: 1;
+    min-width: 110px;
   }
   .add-form button:active { opacity: 0.85; }
   .field-label {
@@ -136,6 +150,11 @@
   }
   .add-form input[type="date"] {
     width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    -webkit-appearance: none;
+    appearance: none;
     background: var(--bg);
     border: 1px solid var(--panel-border);
     color: var(--text);
@@ -147,10 +166,10 @@
     outline: none;
     border-color: var(--accent);
   }
-  .field-col { flex: 1; min-width: 0; }
+  .field-col { flex: 1; min-width: 130px; max-width: 100%; overflow: hidden; }
 
   #micBtn {
-    flex-shrink: 0;
+    flex: 0 0 42px;
     width: 42px;
     height: 42px;
     border-radius: 50%;
@@ -544,6 +563,8 @@
         <p class="field-label">Due date</p>
         <input type="date" id="newDueDateInput" />
       </div>
+    </div>
+    <div class="add-row">
       <div class="field-col">
         <p class="field-label">Priority</p>
         <select id="newPrioritySelect">
@@ -553,12 +574,15 @@
           <option value="low">Low</option>
         </select>
       </div>
+      <div class="field-col">
+        <p class="field-label">Type</p>
+        <select id="newTypeSelect">
+          <option value="internal" selected>Internal</option>
+          <option value="external">External</option>
+        </select>
+      </div>
     </div>
     <div class="add-row">
-      <select id="newTypeSelect">
-        <option value="internal" selected>Internal</option>
-        <option value="external">External</option>
-      </select>
       <button id="addBtn">Add</button>
     </div>
   </div>

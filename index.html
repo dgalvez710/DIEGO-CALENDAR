@@ -80,6 +80,39 @@
   .week-summary .count-medium { color: var(--medium); }
   .week-summary .count-low { color: var(--low); }
 
+  .week-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .week-nav button {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    color: var(--text-dim);
+    cursor: pointer;
+    border-radius: 6px;
+    font-size: 13px;
+  }
+  .week-nav button:hover { color: var(--text); border-color: var(--accent); }
+  #prevWeekBtn, #nextWeekBtn {
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+    padding: 0;
+    font-size: 16px;
+  }
+  .week-nav-label {
+    flex: 1;
+    font-size: 13px;
+    color: var(--text-dim);
+    text-align: center;
+  }
+  #todayBtn {
+    padding: 5px 10px;
+    flex-shrink: 0;
+  }
+
   .add-form {
     background: var(--panel);
     border: 1px solid var(--panel-border);
@@ -528,13 +561,19 @@
     <div class="header-top">
       <div>
         <p class="week-label" id="weekLabel">Loading week...</p>
-        <h1>This week's tasks</h1>
+        <h1 id="pageTitle">This week's tasks</h1>
       </div>
       <div class="header-actions">
         <button type="button" id="exportBtn" title="Download a backup of all tasks">Export</button>
         <button type="button" id="importBtn" title="Load tasks from a backup file">Import</button>
         <input type="file" id="importFile" accept="application/json" style="display:none;" />
       </div>
+    </div>
+    <div class="week-nav">
+      <button type="button" id="prevWeekBtn" title="Previous week">&larr;</button>
+      <span class="week-nav-label" id="weekNavLabel">This week</span>
+      <button type="button" id="nextWeekBtn" title="Next week">&rarr;</button>
+      <button type="button" id="todayBtn" title="Back to this week">Today</button>
     </div>
     <p class="week-summary" id="weekSummary"></p>
     <p class="sync-status" id="syncStatus">Connecting...</p>
@@ -627,6 +666,11 @@
   const archiveToggle = document.getElementById('archiveToggle');
   const weekLabel = document.getElementById('weekLabel');
   const weekSummary = document.getElementById('weekSummary');
+  const weekNavLabel = document.getElementById('weekNavLabel');
+  const prevWeekBtn = document.getElementById('prevWeekBtn');
+  const nextWeekBtn = document.getElementById('nextWeekBtn');
+  const todayBtn = document.getElementById('todayBtn');
+  const pageTitle = document.getElementById('pageTitle');
   const exportBtn = document.getElementById('exportBtn');
   const importBtn = document.getElementById('importBtn');
   const importFile = document.getElementById('importFile');
@@ -673,7 +717,8 @@
     return start.toLocaleDateString('en-US', opts) + ' - ' + end.toLocaleDateString('en-US', opts);
   }
 
-  const currentWeek = isoDate(mondayOf(new Date()));
+  const todayWeek = isoDate(mondayOf(new Date()));
+  let viewedWeek = todayWeek;
 
   // Firebase config, this is a client-side app key, safe to embed here.
   // Security comes from Firestore rules, not from hiding this.
@@ -779,8 +824,8 @@
   function rollOverdueForward() {
     let moved = 0;
     tasks.forEach(t => {
-      if (!t.completed && t.week < currentWeek) {
-        t.week = currentWeek;
+      if (!t.completed && t.week < todayWeek) {
+        t.week = todayWeek;
         t.rolledOver = true;
         moved++;
       }
@@ -789,7 +834,7 @@
   }
 
   function addTask(text, week, rolledOver, account, priority, stakeholder, type, dueDate) {
-    const resolvedWeek = dueDate ? isoDate(mondayOf(new Date(dueDate + 'T00:00:00'))) : (week || currentWeek);
+    const resolvedWeek = dueDate ? isoDate(mondayOf(new Date(dueDate + 'T00:00:00'))) : (week || viewedWeek);
     const t = {
       id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
       text: text.trim(),
@@ -808,9 +853,19 @@
   }
 
   function render() {
-    weekLabel.textContent = 'Week of ' + fmtRange(currentWeek);
+    weekLabel.textContent = 'Week of ' + fmtRange(viewedWeek);
+    if (weekNavLabel) {
+      weekNavLabel.textContent = viewedWeek === todayWeek ? 'This week' : fmtRange(viewedWeek);
+    }
+    if (todayBtn) {
+      todayBtn.style.display = viewedWeek === todayWeek ? 'none' : 'inline-block';
+    }
+    if (pageTitle) {
+      pageTitle.textContent = viewedWeek === todayWeek ? "This week's tasks"
+        : viewedWeek > todayWeek ? "Upcoming tasks" : "Past tasks";
+    }
 
-    const thisWeekTasks = tasks.filter(t => t.week === currentWeek);
+    const thisWeekTasks = tasks.filter(t => t.week === viewedWeek);
     const openCount = thisWeekTasks.filter(t => !t.completed);
     const highCount = openCount.filter(t => t.priority === 'high').length;
     const medCount = openCount.filter(t => t.priority === 'medium').length;
@@ -981,7 +1036,7 @@
         reopen.onclick = async () => {
           t.completed = false;
           t.completedAt = null;
-          t.week = currentWeek;
+          t.week = todayWeek;
           await saveTasks();
           render();
         };
@@ -1146,7 +1201,7 @@
     save.textContent = 'Add for this week';
     save.onclick = async () => {
       if (followInput.value.trim()) {
-        addTask(followInput.value, currentWeek, false, followAccount.value, followPriority.value, followStakeholder.value, followType.value);
+        addTask(followInput.value, viewedWeek, false, followAccount.value, followPriority.value, followStakeholder.value, followType.value);
         await saveTasks();
       }
       pendingFollowup = null;
@@ -1158,7 +1213,7 @@
     saveNext.textContent = 'Add for next week';
     saveNext.onclick = async () => {
       if (followInput.value.trim()) {
-        const nextMonday = new Date(currentWeek + 'T00:00:00');
+        const nextMonday = new Date(viewedWeek + 'T00:00:00');
         nextMonday.setDate(nextMonday.getDate() + 7);
         addTask(followInput.value, isoDate(nextMonday), false, followAccount.value, followPriority.value, followStakeholder.value, followType.value);
         await saveTasks();
@@ -1207,7 +1262,7 @@
 
   addBtn.onclick = async () => {
     if (input.value.trim()) {
-      addTask(input.value, currentWeek, false, accountInput.value, prioritySelect.value, stakeholderInput.value, typeSelect.value, dueDateInput.value);
+      addTask(input.value, viewedWeek, false, accountInput.value, prioritySelect.value, stakeholderInput.value, typeSelect.value, dueDateInput.value);
       input.value = '';
       accountInput.value = '';
       stakeholderInput.value = '';
@@ -1434,6 +1489,25 @@
 
     voiceStatus.textContent = 'Filled in from your voice note, best guess. Double check before hitting Add.';
   }
+
+  prevWeekBtn.onclick = () => {
+    const d = new Date(viewedWeek + 'T00:00:00');
+    d.setDate(d.getDate() - 7);
+    viewedWeek = isoDate(d);
+    render();
+  };
+
+  nextWeekBtn.onclick = () => {
+    const d = new Date(viewedWeek + 'T00:00:00');
+    d.setDate(d.getDate() + 7);
+    viewedWeek = isoDate(d);
+    render();
+  };
+
+  todayBtn.onclick = () => {
+    viewedWeek = todayWeek;
+    render();
+  };
 
   exportBtn.onclick = () => {
     const payload = {

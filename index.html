@@ -9,6 +9,7 @@
 <title>Task Tracker</title>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 <style>
   :root {
     --bg: #16181d;
@@ -795,29 +796,39 @@
       setSyncStatus('offline');
       return;
     }
-    taskDocRef.onSnapshot(
-      (docSnap) => {
-        if (suppressNextSnapshotRender) {
-          suppressNextSnapshotRender = false;
+    // Sign in anonymously first. This doesn't ask the person for anything,
+    // it just gets a token from Firebase so the security rules can tell
+    // "this app" apart from a random script hitting the database directly.
+    firebase.auth().signInAnonymously().catch(() => {
+      setSyncStatus('offline');
+    });
+
+    firebase.auth().onAuthStateChanged((user) => {
+      if (!user) return;
+      taskDocRef.onSnapshot(
+        (docSnap) => {
+          if (suppressNextSnapshotRender) {
+            suppressNextSnapshotRender = false;
+            setSyncStatus('online');
+            return;
+          }
+          if (docSnap.exists) {
+            const data = docSnap.data();
+            tasks = data.tasks ? JSON.parse(data.tasks) : [];
+          } else {
+            tasks = [];
+          }
+          localAdapter.set('tasks', JSON.stringify(tasks));
+          const moved = rollOverdueForward();
+          if (moved > 0) saveTasks();
           setSyncStatus('online');
-          return;
+          render();
+        },
+        (error) => {
+          setSyncStatus('offline');
         }
-        if (docSnap.exists) {
-          const data = docSnap.data();
-          tasks = data.tasks ? JSON.parse(data.tasks) : [];
-        } else {
-          tasks = [];
-        }
-        localAdapter.set('tasks', JSON.stringify(tasks));
-        const moved = rollOverdueForward();
-        if (moved > 0) saveTasks();
-        setSyncStatus('online');
-        render();
-      },
-      (error) => {
-        setSyncStatus('offline');
-      }
-    );
+      );
+    });
   }
 
 

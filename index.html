@@ -10,6 +10,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root {
     --bg: #16181d;
@@ -1310,7 +1311,7 @@
   <div class="account-tracker-section">
     <div class="account-section-header">
       <p class="section-title" style="margin:0;">Accounts</p>
-      <button type="button" id="exportAccountsBtn" title="Download accounts as a spreadsheet">Export CSV</button>
+      <button type="button" id="exportAccountsBtn" title="Download accounts as an Excel file">Export Excel</button>
     </div>
     <div id="pipelineDashboard" class="pipeline-dashboard"></div>
 
@@ -2978,25 +2979,37 @@
   if (exportAccountsBtn) {
     exportAccountsBtn.onclick = () => {
       const currentYear = new Date().getFullYear();
-      const rows = [['Account', 'Status', 'YTD Value', 'All-Time Value', 'Projects']];
+
+      const summaryRows = [['Account', 'Status', 'YTD Value', 'All-Time Value', 'Projects']];
+      const projectRows = [['Account', 'Status', 'Project', 'Value', 'Quarter', 'Year', 'Link']];
+
       accountsList.forEach(acc => {
         if (acc.deleted) return;
         const ytd = accountYearTotal(acc, currentYear);
         const allTime = (acc.documents || []).reduce((sum, d) => sum + (Number(d.value) || 0), 0);
         const docCount = (acc.documents || []).length;
-        const escapedName = '"' + acc.name.replace(/"/g, '""') + '"';
-        rows.push([escapedName, acc.status || '', ytd, allTime, docCount]);
+        summaryRows.push([acc.name, acc.status || '', ytd, allTime, docCount]);
+
+        (acc.documents || []).forEach(doc => {
+          const q = getDocQuarter(doc);
+          projectRows.push([
+            acc.name,
+            acc.status || '',
+            doc.title || '',
+            Number(doc.value) || 0,
+            q ? ('Q' + q) : '',
+            getDocYear(doc),
+            doc.url || ''
+          ]);
+        });
       });
-      const csv = rows.map(r => r.join(',')).join('\n');
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'accounts-' + isoDate(new Date()) + '.csv';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+
+      const wb = XLSX.utils.book_new();
+      const summarySheet = XLSX.utils.aoa_to_sheet(summaryRows);
+      const projectSheet = XLSX.utils.aoa_to_sheet(projectRows);
+      XLSX.utils.book_append_sheet(wb, summarySheet, 'Accounts');
+      XLSX.utils.book_append_sheet(wb, projectSheet, 'Projects');
+      XLSX.writeFile(wb, 'accounts-' + isoDate(new Date()) + '.xlsx');
     };
   }
 

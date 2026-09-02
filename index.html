@@ -1016,11 +1016,75 @@
     color: var(--text-dim);
     flex-shrink: 0;
   }
+  .account-group-quick-add {
+    flex-shrink: 0;
+    background: var(--bg);
+    border: 1px solid var(--panel-border);
+    color: var(--text-dim);
+    font-size: 11.5px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .account-group-quick-add:hover { color: var(--text); border-color: var(--accent); }
   .account-group-caret {
     color: var(--text-dim);
     flex-shrink: 0;
     font-size: 12px;
   }
+  .inline-add-task-form {
+    background: var(--bg);
+    border: 1px solid var(--panel-border);
+    border-top: none;
+    padding: 10px 12px;
+  }
+  .inline-add-task-input {
+    width: 100%;
+    box-sizing: border-box;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    color: var(--text);
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 8px;
+  }
+  .inline-add-task-input:focus { outline: none; border-color: var(--accent); }
+  .inline-add-task-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .inline-add-task-row input[type="text"] {
+    flex: 1;
+    min-width: 90px;
+    box-sizing: border-box;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    color: var(--text);
+    padding: 9px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+  }
+  .inline-add-task-row input[type="text"]:focus { outline: none; border-color: var(--accent); }
+  .inline-add-task-form .btn-group {
+    margin-bottom: 8px;
+  }
+  .inline-add-task-btns {
+    display: flex;
+    gap: 6px;
+  }
+  .inline-add-task-submit, .inline-add-task-cancel {
+    border: none;
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .inline-add-task-submit { background: var(--accent); color: #fff; flex: 1; }
+  .inline-add-task-cancel { background: var(--panel); color: var(--text-dim); border: 1px solid var(--panel-border); }
   .account-group-body {
     padding: 8px;
   }
@@ -1203,6 +1267,10 @@
     .header-actions button { padding: 7px 9px; font-size: 11px; }
     .add-form { padding: 10px; }
     .task { padding: 11px; }
+    .account-group-header { padding: 10px 12px; gap: 6px; }
+    .account-group-name { font-size: 14px; }
+    .account-group-count { display: none; }
+    .account-group-quick-add { padding: 4px 7px; font-size: 11px; }
   }
 
   .sync-status {
@@ -1396,9 +1464,9 @@
   // Only month and day are picked, the year is figured out on its own:
   // whichever of this year or next year makes that date the next upcoming
   // one, since a due date almost never means a year from now.
-  function resolveDueDate() {
-    const month = parseMonthInput(dueMonthInput.value);
-    const day = parseDayInput(dueDayInput.value);
+  function computeDueDate(monthText, dayText) {
+    const month = parseMonthInput(monthText);
+    const day = parseDayInput(dayText);
     if (!month || !day) return '';
     const today = new Date();
     const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
@@ -1407,6 +1475,10 @@
       d = new Date(today.getFullYear() + 1, month - 1, day);
     }
     return isoDate(d);
+  }
+
+  function resolveDueDate() {
+    return computeDueDate(dueMonthInput.value, dueDayInput.value);
   }
 
   const prioritySelect = document.getElementById('newPrioritySelect');
@@ -1446,6 +1518,7 @@
 
   let tasks = [];
   let pendingCommentEdit = null; // task id currently showing the comment editor
+  let inlineAddTaskAccount = null; // group key currently showing its own add-task form
   let collapsedAccounts = new Set();
   let expandedAccountDocs = new Set();
   let pendingDeleteAccountId = null;
@@ -2713,12 +2786,24 @@
     countEl.className = 'account-group-count';
     countEl.textContent = tasksArr.length + (tasksArr.length === 1 ? ' task' : ' tasks');
 
+    const quickAddBtn = document.createElement('button');
+    quickAddBtn.type = 'button';
+    quickAddBtn.className = 'account-group-quick-add';
+    quickAddBtn.textContent = '+ Task';
+    quickAddBtn.title = 'Add a task to ' + accountName;
+    quickAddBtn.onclick = (e) => {
+      e.stopPropagation();
+      inlineAddTaskAccount = inlineAddTaskAccount === key ? null : key;
+      render();
+    };
+
     const caret = document.createElement('span');
     caret.className = 'account-group-caret';
     caret.textContent = collapsed ? '\u25b8' : '\u25be';
 
     header.appendChild(nameEl);
     header.appendChild(countEl);
+    header.appendChild(quickAddBtn);
     header.appendChild(caret);
     header.onclick = () => {
       if (collapsedAccounts.has(key)) {
@@ -2731,12 +2816,107 @@
     };
     wrap.appendChild(header);
 
+    if (inlineAddTaskAccount === key) {
+      wrap.appendChild(renderInlineAddTaskForm(accountName));
+    }
+
     if (!collapsed) {
       const body = document.createElement('div');
       body.className = 'account-group-body';
       tasksArr.forEach(t => body.appendChild(renderTask(t, true)));
       wrap.appendChild(body);
     }
+
+    return wrap;
+  }
+
+  function renderInlineAddTaskForm(accountName) {
+    const wrap = document.createElement('div');
+    wrap.className = 'inline-add-task-form';
+
+    const taskInput = document.createElement('input');
+    taskInput.type = 'text';
+    taskInput.className = 'inline-add-task-input';
+    taskInput.placeholder = 'Add a task for ' + accountName;
+    wrap.appendChild(taskInput);
+
+    const row2 = document.createElement('div');
+    row2.className = 'inline-add-task-row';
+    const stakeholderInputLocal = document.createElement('input');
+    stakeholderInputLocal.type = 'text';
+    stakeholderInputLocal.placeholder = 'Stakeholder (optional)';
+    const monthInputLocal = document.createElement('input');
+    monthInputLocal.type = 'text';
+    monthInputLocal.placeholder = 'Month';
+    const dayInputLocal = document.createElement('input');
+    dayInputLocal.type = 'text';
+    dayInputLocal.placeholder = 'Day';
+    row2.appendChild(stakeholderInputLocal);
+    row2.appendChild(monthInputLocal);
+    row2.appendChild(dayInputLocal);
+    wrap.appendChild(row2);
+
+    let localPriority = '';
+    const prioGroup = document.createElement('div');
+    prioGroup.className = 'btn-group';
+    [['high', 'H'], ['medium', 'M'], ['low', 'L']].forEach(([val, label]) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'btn-group-option prio-' + val;
+      b.textContent = label;
+      b.onclick = () => {
+        localPriority = (localPriority === val) ? '' : val;
+        prioGroup.querySelectorAll('.btn-group-option').forEach(x => x.classList.remove('active'));
+        if (localPriority === val) b.classList.add('active');
+      };
+      prioGroup.appendChild(b);
+    });
+    wrap.appendChild(prioGroup);
+
+    let localType = '';
+    const typeGroup = document.createElement('div');
+    typeGroup.className = 'btn-group';
+    [['internal', 'Internal'], ['external', 'External']].forEach(([val, label]) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'btn-group-option type-' + val;
+      b.textContent = label;
+      b.onclick = () => {
+        localType = (localType === val) ? '' : val;
+        typeGroup.querySelectorAll('.btn-group-option').forEach(x => x.classList.remove('active'));
+        if (localType === val) b.classList.add('active');
+      };
+      typeGroup.appendChild(b);
+    });
+    wrap.appendChild(typeGroup);
+
+    const btnRow = document.createElement('div');
+    btnRow.className = 'inline-add-task-btns';
+
+    const addBtnLocal = document.createElement('button');
+    addBtnLocal.className = 'inline-add-task-submit';
+    addBtnLocal.textContent = 'Add';
+    addBtnLocal.onclick = async () => {
+      if (!taskInput.value.trim()) return;
+      const dueDate = computeDueDate(monthInputLocal.value, dayInputLocal.value);
+      addTask(taskInput.value, viewedWeek, false, accountName, localPriority, stakeholderInputLocal.value, localType, dueDate);
+      inlineAddTaskAccount = null;
+      await saveTasks();
+      render();
+    };
+    btnRow.appendChild(addBtnLocal);
+
+    const cancelBtnLocal = document.createElement('button');
+    cancelBtnLocal.className = 'inline-add-task-cancel';
+    cancelBtnLocal.textContent = 'Cancel';
+    cancelBtnLocal.onclick = () => {
+      inlineAddTaskAccount = null;
+      render();
+    };
+    btnRow.appendChild(cancelBtnLocal);
+    wrap.appendChild(btnRow);
+
+    setTimeout(() => taskInput.focus(), 0);
 
     return wrap;
   }

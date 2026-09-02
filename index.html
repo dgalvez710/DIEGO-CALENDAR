@@ -24,7 +24,12 @@
     --high: #c9564a;
     --medium: #c9955a;
     --low: #5a8fc9;
-    --internal-ext: #9a7fc9;
+    --internal-color: #3fa0b5;
+    --external-color: #9a7fc9;
+    --status-won: #4caf82;
+    --status-working: #ccb02e;
+    --status-lost: #b5544a;
+    --status-stalled: #8b909c;
   }
   * { box-sizing: border-box; }
   html, body { overflow-x: hidden; max-width: 100%; }
@@ -175,6 +180,577 @@
     min-width: 110px;
   }
   .add-form button:active { opacity: 0.85; }
+
+  .btn-group {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .btn-group-option {
+    flex: 1;
+    min-width: 44px;
+    background: var(--bg);
+    border: 1px solid var(--panel-border);
+    color: var(--text-dim);
+    font-size: 13px;
+    padding: 9px 6px;
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: center;
+  }
+  .btn-group-option.active {
+    color: #fff;
+    border-color: transparent;
+    font-weight: 700;
+  }
+
+  /* Bubble always shows its color, dim when unselected, solid + a light
+     ring when selected, so the color itself is always readable, not just
+     the outline. */
+  .btn-group-option.prio-high,
+  .btn-group-option.prio-medium,
+  .btn-group-option.prio-low,
+  .btn-group-option.type-internal,
+  .btn-group-option.type-external,
+  .btn-group-option.status-won,
+  .btn-group-option.status-working,
+  .btn-group-option.status-lost,
+  .btn-group-option.status-stalled {
+    color: #fff;
+    border-color: transparent;
+    opacity: 0.5;
+  }
+  .btn-group-option.prio-high { background: var(--high); }
+  .btn-group-option.prio-medium { background: var(--medium); }
+  .btn-group-option.prio-low { background: var(--low); }
+  .btn-group-option.type-internal { background: var(--internal-color); }
+  .btn-group-option.type-external { background: var(--external-color); }
+  .btn-group-option.status-won { background: var(--status-won); }
+  .btn-group-option.status-working { background: var(--status-working); }
+  .btn-group-option.status-lost { background: var(--status-lost); }
+  .btn-group-option.status-stalled { background: var(--status-stalled); }
+
+  .btn-group-option.prio-high.active,
+  .btn-group-option.prio-medium.active,
+  .btn-group-option.prio-low.active,
+  .btn-group-option.type-internal.active,
+  .btn-group-option.type-external.active,
+  .btn-group-option.status-won.active,
+  .btn-group-option.status-working.active,
+  .btn-group-option.status-lost.active,
+  .btn-group-option.status-stalled.active {
+    opacity: 1;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.55) inset;
+  }
+  .btn-group-option:not(.active):hover { opacity: 0.75; }
+
+  .account-tracker-section {
+    margin-top: 22px;
+  }
+  .account-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .account-section-header button {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    color: var(--text-dim);
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .account-section-header button:hover { color: var(--text); border-color: var(--accent); }
+  .pipeline-dashboard {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .pipeline-stat {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+  .pipeline-stat-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--text-dim);
+    margin: 0 0 4px;
+  }
+  .pipeline-stat-value {
+    font-size: 17px;
+    font-weight: 700;
+  }
+  .pipeline-stat-value.won { color: var(--status-won); }
+  .pipeline-stat-value.working { color: var(--status-working); }
+  .pipeline-stat-sub {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+  .quarter-report-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    margin-bottom: 14px;
+  }
+  .quarter-report-label {
+    font-size: 12px;
+    color: var(--text-dim);
+    flex-shrink: 0;
+  }
+  #reportQuarterGroup {
+    flex: 1;
+    min-width: 140px;
+    gap: 4px;
+  }
+  .report-quarter-btn {
+    flex: 1;
+    min-width: 34px;
+    padding: 6px 4px;
+    font-size: 12px;
+    background: var(--bg);
+    color: var(--text-dim);
+    border: 1px solid var(--panel-border);
+  }
+  .report-quarter-btn.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: transparent;
+    font-weight: 700;
+  }
+  #exportQuarterReportBtn {
+    flex-shrink: 0;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 7px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .account-add-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .account-search-input {
+    width: 100%;
+    box-sizing: border-box;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    color: var(--text);
+    padding: 9px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 10px;
+  }
+  .account-search-input:focus { outline: none; border-color: var(--accent); }
+
+  .deleted-accounts-toggle {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 12px;
+    cursor: pointer;
+    padding: 6px 0;
+    margin-top: 6px;
+  }
+  .deleted-accounts-toggle:hover { color: var(--text); }
+  .deleted-accounts-list {
+    margin-top: 6px;
+  }
+  .deleted-account-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    opacity: 0.85;
+  }
+  .deleted-account-info { flex: 1; min-width: 0; }
+  .deleted-account-name {
+    font-size: 14px;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .deleted-account-sub {
+    font-size: 11.5px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+  .deleted-account-restore {
+    flex-shrink: 0;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .account-add-row input[type="text"] {
+    flex: 1;
+    min-width: 140px;
+    box-sizing: border-box;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    color: var(--text);
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+  .account-add-row input[type="text"]:focus { outline: none; border-color: var(--accent); }
+  .account-add-row .btn-group { flex: 1 1 100%; }
+  #addAccountTrackerBtn {
+    flex: 1 1 100%;
+    padding: 10px;
+  }
+  .account-track-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-left: 4px solid var(--panel-border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+  }
+  .account-track-item.status-won { border-left-color: var(--status-won); }
+  .account-track-item.status-working { border-left-color: var(--status-working); }
+  .account-track-item.status-lost { border-left-color: var(--status-lost); }
+  .account-track-item.status-stalled { border-left-color: var(--status-stalled); }
+  .account-track-name {
+    flex: 1;
+    min-width: 0;
+    font-size: 14.5px;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .account-track-value-row {
+    font-size: 12px;
+    color: var(--text-dim);
+    padding: 4px 12px 0;
+  }
+  .account-stale-badge {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--status-working);
+    color: #1a1400;
+    border: none;
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 20px;
+    padding: 0;
+    cursor: pointer;
+    text-align: center;
+  }
+  .account-stale-badge:hover { filter: brightness(1.15); }
+  .account-reminders-row {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--panel-border);
+  }
+  .account-reminders-toggle {
+    background: none;
+    border: 1px solid var(--panel-border);
+    color: var(--text-dim);
+    font-size: 11.5px;
+    padding: 5px 9px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .account-reminders-toggle:hover { color: var(--text); border-color: var(--accent); }
+  .account-reminders-toggle.off { color: var(--text-dim); opacity: 0.6; }
+  .account-track-item .btn-group {
+    flex-shrink: 0;
+    width: auto;
+    gap: 4px;
+  }
+  .account-track-item .btn-group-option {
+    flex: none;
+    min-width: 30px;
+    padding: 5px 7px;
+    font-size: 11px;
+  }
+  .account-track-del {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 18px;
+    cursor: pointer;
+    flex-shrink: 0;
+    padding: 0 2px;
+  }
+  .account-track-del:hover { color: var(--danger); }
+  .account-delete-confirm {
+    background: rgba(181, 84, 74, 0.1);
+    border: 1px solid var(--danger);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-top: -1px;
+  }
+  .account-delete-confirm p {
+    margin: 0 0 8px;
+    font-size: 13px;
+    color: var(--text);
+  }
+  .account-delete-confirm-btns {
+    display: flex;
+    gap: 8px;
+  }
+  .account-delete-confirm-yes, .account-delete-confirm-cancel {
+    border: none;
+    border-radius: 6px;
+    padding: 7px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .account-delete-confirm-yes { background: var(--danger); color: #fff; }
+  .account-delete-confirm-cancel { background: var(--panel); color: var(--text-dim); border: 1px solid var(--panel-border); }
+  .account-track-docs-btn {
+    background: var(--bg);
+    border: 1px solid var(--panel-border);
+    color: var(--text-dim);
+    font-size: 11.5px;
+    padding: 5px 9px;
+    border-radius: 6px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .account-track-docs-btn:hover { color: var(--text); border-color: var(--accent); }
+  .account-track-wrap { margin-bottom: 8px; }
+  .account-track-wrap .account-track-item { margin-bottom: 0; }
+  .account-docs-panel {
+    background: var(--bg);
+    border: 1px solid var(--panel-border);
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    padding: 10px 12px;
+    margin-top: -1px;
+  }
+  .account-docs-empty {
+    color: var(--text-dim);
+    font-size: 12.5px;
+    margin: 0 0 8px;
+  }
+  .account-year-totals {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 10px;
+  }
+  .account-year-block {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px;
+  }
+  .account-year-total {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 5px;
+    padding: 3px 8px;
+  }
+  .account-quarter-totals {
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+  .account-doc-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--panel-border);
+  }
+  .account-doc-item:last-of-type { border-bottom: none; }
+  .account-doc-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .account-doc-link {
+    display: block;
+    color: var(--accent);
+    font-size: 13px;
+    text-decoration: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .account-doc-link:hover { text-decoration: underline; }
+  .account-doc-value {
+    font-size: 11.5px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+  .account-doc-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .account-doc-edit {
+    background: none;
+    border: 1px solid var(--panel-border);
+    color: var(--text-dim);
+    font-size: 11.5px;
+    padding: 4px 8px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  .account-doc-edit:hover { color: var(--text); border-color: var(--accent); }
+  .account-doc-del {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 16px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .account-doc-del:hover { color: var(--danger); }
+  .account-doc-edit-item {
+    display: block;
+    padding: 10px 0;
+  }
+  .account-doc-edit-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .account-doc-edit-row input[type="text"] {
+    box-sizing: border-box;
+    width: 100%;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    color: var(--text);
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+  }
+  .account-doc-edit-row input[type="text"]:focus { outline: none; border-color: var(--accent); }
+  .account-doc-edit-btns {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .account-doc-edit-save, .account-doc-edit-cancel {
+    border: none;
+    border-radius: 6px;
+    padding: 7px 12px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .account-doc-edit-save { background: var(--accent); color: #fff; }
+  .account-doc-edit-cancel { background: var(--panel); color: var(--text-dim); border: 1px solid var(--panel-border); }
+  .account-doc-add-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .account-doc-add-row input[type="text"] {
+    box-sizing: border-box;
+    width: 100%;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    color: var(--text);
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+  }
+  .account-doc-add-row input[type="text"]:focus { outline: none; border-color: var(--accent); }
+  .account-doc-period-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .account-doc-quarter-group {
+    flex: 1;
+    gap: 4px;
+  }
+  .account-doc-quarter-btn {
+    flex: 1;
+    min-width: 34px;
+    padding: 6px 4px;
+    font-size: 12px;
+    background: var(--panel);
+    color: var(--text-dim);
+    border: 1px solid var(--panel-border);
+  }
+  .account-doc-quarter-btn.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: transparent;
+    font-weight: 700;
+  }
+  .account-doc-year-select {
+    flex-shrink: 0;
+    width: 62px;
+    box-sizing: border-box;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    color: var(--text);
+    padding: 6px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    text-align: center;
+  }
+  .account-doc-year-select:focus { outline: none; border-color: var(--accent); }
+  .account-doc-add-btn {
+    width: 100%;
+    margin-top: 6px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 8px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .account-track-empty {
+    color: var(--text-dim);
+    font-size: 13px;
+    padding: 6px 2px;
+  }
+  .account-status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+    flex-shrink: 0;
+  }
+
   .field-label {
     font-size: 11px;
     text-transform: uppercase;
@@ -182,69 +758,26 @@
     color: var(--text-dim);
     margin: 0 0 3px;
   }
-  .add-form input[type="date"] {
-    width: 100%;
-    max-width: 100%;
+  .due-date-row {
+    display: flex;
+    gap: 6px;
+  }
+  .due-date-row input[type="text"] {
+    flex: 1;
     min-width: 0;
     box-sizing: border-box;
-    -webkit-appearance: none;
-    appearance: none;
     background: var(--bg);
     border: 1px solid var(--panel-border);
     color: var(--text);
-    padding: 10px 12px;
+    padding: 10px 8px;
     border-radius: 8px;
     font-size: 14px;
   }
-  .add-form input[type="date"]:focus {
+  .due-date-row input[type="text"]:focus {
     outline: none;
     border-color: var(--accent);
   }
   .field-col { flex: 1; min-width: 130px; max-width: 100%; overflow: hidden; }
-
-  #micBtn {
-    flex: 0 0 42px;
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-    border: 1px solid var(--panel-border);
-    background: var(--bg);
-    color: var(--text-dim);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    padding: 0;
-  }
-  #micBtn svg { width: 18px; height: 18px; }
-  #micBtn:hover { color: var(--text); border-color: var(--accent); }
-  #micBtn.listening {
-    color: #fff;
-    background: var(--danger);
-    border-color: var(--danger);
-    animation: pulse 1.2s infinite;
-  }
-  #micBtn.processing {
-    color: #fff;
-    background: var(--accent);
-    border-color: var(--accent);
-    animation: spin 1s linear infinite;
-  }
-  @keyframes pulse {
-    0% { box-shadow: 0 0 0 0 rgba(181, 84, 74, 0.5); }
-    70% { box-shadow: 0 0 0 9px rgba(181, 84, 74, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(181, 84, 74, 0); }
-  }
-  @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-  .voice-status {
-    font-size: 12.5px;
-    color: var(--text-dim);
-    margin: 6px 0 0;
-    min-height: 16px;
-  }
 
   .section-title {
     font-size: 12px;
@@ -300,6 +833,59 @@
     color: var(--overdue);
     margin-top: 3px;
   }
+  .task-comment-wrap {
+    margin-top: 8px;
+  }
+  .task-comment-text {
+    font-size: 13px;
+    color: var(--text-dim);
+    background: var(--bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+    padding: 7px 10px;
+    cursor: pointer;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .task-comment-text:hover { border-color: var(--accent); color: var(--text); }
+  .task-comment-add {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 12.5px;
+    padding: 0;
+    cursor: pointer;
+  }
+  .task-comment-add:hover { color: var(--accent); }
+  .task-comment-input {
+    width: 100%;
+    box-sizing: border-box;
+    background: var(--bg);
+    border: 1px solid var(--accent);
+    color: var(--text);
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 50px;
+  }
+  .task-comment-input:focus { outline: none; }
+  .task-comment-btns {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+  }
+  .task-comment-save, .task-comment-cancel {
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .task-comment-save { background: var(--accent); color: #fff; }
+  .task-comment-cancel { background: var(--panel); color: var(--text-dim); border: 1px solid var(--panel-border); }
   .task-tags {
     display: flex;
     align-items: center;
@@ -333,11 +919,10 @@
     letter-spacing: 0.03em;
     border-radius: 5px;
     padding: 2px 7px;
-    color: var(--text-dim);
-    background: rgba(139, 144, 156, 0.12);
     border: 1px solid var(--panel-border);
   }
-  .type-tag.type-external { color: var(--internal-ext); }
+  .type-tag.type-internal { color: var(--internal-color); background: rgba(63, 160, 181, 0.12); }
+  .type-tag.type-external { color: var(--external-color); background: rgba(154, 127, 201, 0.12); }
   .stakeholder-tag {
     font-size: 12px;
     color: var(--text-dim);
@@ -394,60 +979,63 @@
     text-align: center;
   }
 
-  .followup-box {
+  .account-group {
+    margin-bottom: 14px;
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .account-group-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 14px;
     background: var(--accent-dim);
-    border: 1px solid var(--accent);
-    border-radius: 8px;
-    padding: 12px;
-    margin: 6px 0 14px;
+    cursor: pointer;
+    user-select: none;
   }
-  .followup-box p {
-    margin: 0 0 8px;
-    font-size: 13px;
+  .account-group-header.collapsed {
+    border-bottom: none;
+  }
+  .account-group-header:not(.collapsed) {
+    border-bottom: 1px solid var(--panel-border);
+  }
+  .account-group-name {
+    font-weight: 700;
+    font-size: 15px;
     color: var(--text);
-  }
-  .followup-box .row { display: flex; gap: 8px; }
-  .followup-box input[type="text"] {
     flex: 1;
-    background: var(--bg);
-    border: 1px solid var(--panel-border);
-    color: var(--text);
-    padding: 9px 10px;
-    border-radius: 6px;
-    font-size: 14px;
     min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
-  .followup-box select {
-    background: var(--bg);
-    border: 1px solid var(--panel-border);
-    color: var(--text);
-    padding: 0 8px;
-    border-radius: 6px;
-    font-size: 13px;
+  .account-group-count {
+    font-size: 12px;
+    color: var(--text-dim);
     flex-shrink: 0;
   }
-  .followup-box .btns { display: flex; gap: 6px; margin-top: 8px; }
-  .followup-box button {
-    border: none;
-    border-radius: 6px;
-    padding: 7px 12px;
-    font-size: 13px;
-    cursor: pointer;
-    font-weight: 600;
-  }
-  .followup-box .save { background: var(--accent); color: #fff; }
-  .followup-box .skip { background: transparent; color: var(--text-dim); border: 1px solid var(--panel-border); }
-
-  .toggle-archive {
-    background: none;
-    border: none;
+  .account-group-caret {
     color: var(--text-dim);
-    font-size: 13px;
-    cursor: pointer;
-    padding: 4px 0;
-    margin-top: 8px;
+    flex-shrink: 0;
+    font-size: 12px;
   }
-  .toggle-archive:hover { color: var(--text); }
+  .account-group-body {
+    padding: 8px;
+  }
+  .account-group-body .task {
+    margin-bottom: 6px;
+  }
+  .account-group-body .task:last-child {
+    margin-bottom: 0;
+  }
+  .unassigned-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-dim);
+    margin: 6px 0 8px;
+  }
 
   .status {
     font-size: 12px;
@@ -540,18 +1128,44 @@
     padding: 10px 2px;
   }
   .history-week-header {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
     font-size: 12px;
     font-weight: 600;
-    color: var(--text-dim);
-    margin: 16px 0 4px;
+    color: var(--text);
+    margin: 16px 0 8px;
+    padding: 8px 10px;
     text-transform: uppercase;
     letter-spacing: 0.03em;
+    cursor: pointer;
+  }
+  .history-week-header:hover { border-color: var(--accent); }
+  .history-week-header.collapsed {
+    color: var(--text-dim);
+    font-weight: 500;
+  }
+  .history-week-header::after {
+    content: '\u25be';
+    float: right;
+    text-transform: none;
+  }
+  .history-week-header.collapsed::after {
+    content: '\u25b8';
   }
   .history-week-header:first-child { margin-top: 8px; }
   .history-date {
     font-size: 11px;
     color: var(--text-dim);
     margin-top: 4px;
+  }
+  .history-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
   }
   .history-reopen {
     background: none;
@@ -561,9 +1175,18 @@
     font-size: 12px;
     padding: 5px 9px;
     border-radius: 6px;
-    margin-top: 8px;
   }
   .history-reopen:hover { color: var(--text); border-color: var(--accent); }
+  .history-del {
+    background: none;
+    border: 1px solid var(--panel-border);
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 12px;
+    padding: 5px 9px;
+    border-radius: 6px;
+  }
+  .history-del:hover { color: #fff; background: var(--danger); border-color: var(--danger); }
 
   @media (max-width: 480px) {
     body { padding: calc(16px + env(safe-area-inset-top)) 12px calc(60px + env(safe-area-inset-bottom)); }
@@ -621,33 +1244,33 @@
     </div>
     <div class="add-row">
       <input type="text" id="newTaskInput" placeholder="Add a task" />
-      <button type="button" id="micBtn" title="Speak to fill in the form">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-      </button>
     </div>
-    <p class="voice-status" id="voiceStatus"></p>
     <div class="add-row">
       <div class="field-col">
         <p class="field-label">Due date</p>
-        <input type="date" id="newDueDateInput" />
+        <div class="due-date-row">
+          <input type="text" id="dueMonthInput" placeholder="Month" autocomplete="off" />
+          <input type="text" id="dueDayInput" placeholder="Day" autocomplete="off" inputmode="numeric" />
+        </div>
       </div>
     </div>
     <div class="add-row">
       <div class="field-col">
         <p class="field-label">Priority</p>
-        <select id="newPrioritySelect">
-          <option value="" selected></option>
-          <option value="high">High</option>
-          <option value="medium">Medium</option>
-          <option value="low">Low</option>
-        </select>
+        <div class="btn-group" id="priorityBtnGroup">
+          <button type="button" class="btn-group-option prio-high" data-value="high" title="High">H</button>
+          <button type="button" class="btn-group-option prio-medium" data-value="medium" title="Medium">M</button>
+          <button type="button" class="btn-group-option prio-low" data-value="low" title="Low">L</button>
+        </div>
+        <input type="hidden" id="newPrioritySelect" value="" />
       </div>
       <div class="field-col">
         <p class="field-label">Type</p>
-        <select id="newTypeSelect">
-          <option value="internal" selected>Internal</option>
-          <option value="external">External</option>
-        </select>
+        <div class="btn-group" id="typeBtnGroup">
+          <button type="button" class="btn-group-option type-internal" data-value="internal">Internal</button>
+          <button type="button" class="btn-group-option type-external" data-value="external">External</button>
+        </div>
+        <input type="hidden" id="newTypeSelect" value="internal" />
       </div>
     </div>
     <div class="add-row">
@@ -676,11 +1299,40 @@
     <p class="notes-status" id="notesStatus"></p>
   </div>
 
-  <div id="archiveSection" style="display:none;">
-    <p class="section-title">Completed this week</p>
-    <div id="archiveList"></div>
+  <div class="account-tracker-section">
+    <div class="account-section-header">
+      <p class="section-title" style="margin:0;">Accounts</p>
+      <button type="button" id="exportAccountsBtn" title="Download accounts as a spreadsheet">Export CSV</button>
+    </div>
+    <div id="pipelineDashboard" class="pipeline-dashboard"></div>
+
+    <div class="quarter-report-row">
+      <span class="quarter-report-label">Report on:</span>
+      <div class="btn-group" id="reportQuarterGroup">
+        <button type="button" class="btn-group-option report-quarter-btn" data-value="1">Q1</button>
+        <button type="button" class="btn-group-option report-quarter-btn" data-value="2">Q2</button>
+        <button type="button" class="btn-group-option report-quarter-btn" data-value="3">Q3</button>
+        <button type="button" class="btn-group-option report-quarter-btn" data-value="4">Q4</button>
+      </div>
+      <input type="text" inputmode="numeric" id="reportYearSelect" class="account-doc-year-select" maxlength="4" />
+      <button type="button" id="exportQuarterReportBtn">Export</button>
+    </div>
+
+    <div class="account-add-row">
+      <input type="text" id="newAccountTrackerInput" placeholder="Account name" />
+      <div class="btn-group" id="accountStatusBtnGroup">
+        <button type="button" class="btn-group-option status-won" data-value="won">Won</button>
+        <button type="button" class="btn-group-option status-working" data-value="working">Working</button>
+        <button type="button" class="btn-group-option status-lost" data-value="lost">Lost</button>
+        <button type="button" class="btn-group-option status-stalled" data-value="stalled">Stalled</button>
+      </div>
+      <input type="hidden" id="newAccountTrackerStatus" value="working" />
+      <button type="button" id="addAccountTrackerBtn">Add account</button>
+    </div>
+    <input type="text" id="accountSearchInput" class="account-search-input" placeholder="Search accounts" />
+    <div id="accountTrackerList"></div>
+    <div id="deletedAccountsPanel"></div>
   </div>
-  <button class="toggle-archive" id="archiveToggle" style="display:none;"></button>
 
   <div class="history-block">
     <p class="section-title">Completed tasks</p>
@@ -696,9 +1348,6 @@
 <script>
 (function () {
   const listEl = document.getElementById('taskList');
-  const archiveListEl = document.getElementById('archiveList');
-  const archiveSection = document.getElementById('archiveSection');
-  const archiveToggle = document.getElementById('archiveToggle');
   const weekLabel = document.getElementById('weekLabel');
   const weekSummary = document.getElementById('weekSummary');
   const weekNavLabel = document.getElementById('weekNavLabel');
@@ -710,13 +1359,72 @@
   const importBtn = document.getElementById('importBtn');
   const importFile = document.getElementById('importFile');
   const input = document.getElementById('newTaskInput');
-  const micBtn = document.getElementById('micBtn');
-  const voiceStatus = document.getElementById('voiceStatus');
   const accountInput = document.getElementById('newAccountInput');
   const stakeholderInput = document.getElementById('newStakeholderInput');
-  const dueDateInput = document.getElementById('newDueDateInput');
+  const dueMonthInput = document.getElementById('dueMonthInput');
+  const dueDayInput = document.getElementById('dueDayInput');
+
+  const monthNames = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+
+  function parseMonthInput(text) {
+    const raw = (text || '').trim().toLowerCase();
+    if (!raw) return null;
+    if (/^\d{1,2}$/.test(raw)) {
+      const n = parseInt(raw, 10);
+      return (n >= 1 && n <= 12) ? n : null;
+    }
+    const idx = monthNames.findIndex(m => m.startsWith(raw) || raw.startsWith(m));
+    return idx >= 0 ? idx + 1 : null;
+  }
+
+  function parseDayInput(text) {
+    const digits = (text || '').replace(/\D/g, '');
+    if (!digits) return null;
+    const n = parseInt(digits, 10);
+    return (n >= 1 && n <= 31) ? n : null;
+  }
+
+  // Only month and day are picked, the year is figured out on its own:
+  // whichever of this year or next year makes that date the next upcoming
+  // one, since a due date almost never means a year from now.
+  function resolveDueDate() {
+    const month = parseMonthInput(dueMonthInput.value);
+    const day = parseDayInput(dueDayInput.value);
+    if (!month || !day) return '';
+    const today = new Date();
+    const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    let d = new Date(today.getFullYear(), month - 1, day);
+    if (d.getTime() < todayMidnight.getTime()) {
+      d = new Date(today.getFullYear() + 1, month - 1, day);
+    }
+    return isoDate(d);
+  }
+
   const prioritySelect = document.getElementById('newPrioritySelect');
   const typeSelect = document.getElementById('newTypeSelect');
+  const priorityBtnGroup = document.getElementById('priorityBtnGroup');
+  const typeBtnGroup = document.getElementById('typeBtnGroup');
+
+  function setPriorityValue(v) {
+    prioritySelect.value = v;
+    priorityBtnGroup.querySelectorAll('.btn-group-option').forEach(b => {
+      b.classList.toggle('active', b.dataset.value === v);
+    });
+  }
+  function setTypeValue(v) {
+    typeSelect.value = v;
+    typeBtnGroup.querySelectorAll('.btn-group-option').forEach(b => {
+      b.classList.toggle('active', b.dataset.value === v);
+    });
+  }
+  priorityBtnGroup.querySelectorAll('.btn-group-option').forEach(b => {
+    b.onclick = () => setPriorityValue(prioritySelect.value === b.dataset.value ? '' : b.dataset.value);
+  });
+  typeBtnGroup.querySelectorAll('.btn-group-option').forEach(b => {
+    b.onclick = () => setTypeValue(typeSelect.value === b.dataset.value ? '' : b.dataset.value);
+  });
+  setPriorityValue('');
+  setTypeValue('');
   const addBtn = document.getElementById('addBtn');
   const statusMsg = document.getElementById('statusMsg');
   const notesArea = document.getElementById('notesArea');
@@ -728,8 +1436,11 @@
   const historyResults = document.getElementById('historyResults');
 
   let tasks = [];
-  let archiveOpen = false;
-  let pendingFollowup = null; // task id currently showing the follow-up prompt
+  let pendingCommentEdit = null; // task id currently showing the comment editor
+  let collapsedAccounts = new Set();
+  let expandedAccountDocs = new Set();
+  let pendingDeleteAccountId = null;
+  let editingDocIds = new Set();
   let activeAccountFilter = '';
   let activePriorityFilter = '';
 
@@ -749,7 +1460,7 @@
   function fmtRange(mondayIso) {
     const start = new Date(mondayIso + 'T00:00:00');
     const end = new Date(start);
-    end.setDate(end.getDate() + 6);
+    end.setDate(end.getDate() + 4);
     const opts = { month: 'short', day: 'numeric' };
     return start.toLocaleDateString('en-US', opts) + ' - ' + end.toLocaleDateString('en-US', opts);
   }
@@ -770,6 +1481,7 @@
 
   let taskDocRef = null;
   let notesDocRef = null;
+  let accountsDocRef = null;
   let firestoreReady = false;
   let suppressNextSnapshotRender = false;
   let suppressNextNotesRender = false;
@@ -779,6 +1491,7 @@
     const db = firebase.firestore();
     taskDocRef = db.collection('taskTracker').doc('main');
     notesDocRef = db.collection('taskTracker').doc('notes');
+    accountsDocRef = db.collection('taskTracker').doc('accounts');
     firestoreReady = true;
   } catch (e) {
     firestoreReady = false;
@@ -812,15 +1525,19 @@
   async function loadTasks() {
     const value = await localAdapter.get('tasks');
     tasks = value ? JSON.parse(value) : [];
+    const collapsedValue = await localAdapter.get('collapsedAccounts');
+    collapsedAccounts = collapsedValue ? new Set(JSON.parse(collapsedValue)) : new Set();
   }
 
   async function saveTasks() {
     await localAdapter.set('tasks', JSON.stringify(tasks));
+    await localAdapter.set('collapsedAccounts', JSON.stringify(Array.from(collapsedAccounts)));
     if (firestoreReady && taskDocRef) {
       try {
         suppressNextSnapshotRender = true;
         await taskDocRef.set({
           tasks: JSON.stringify(tasks),
+          collapsedAccounts: JSON.stringify(Array.from(collapsedAccounts)),
           updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
       } catch (e) {
@@ -884,6 +1601,715 @@
     });
   }
 
+  // Account tracker: a running list of accounts with a status, separate
+  // from tasks, kept in its own Firestore doc so it syncs the same way.
+  let accountsList = [];
+  let suppressNextAccountsRender = false;
+  let deletedAccountsExpanded = false;
+
+  function activeAccounts() {
+    return accountsList.filter(a => !a.deleted);
+  }
+
+  // Anything sitting in the trash for more than 30 days is gone for good.
+  // Runs every time accounts are loaded or synced in.
+  function purgeOldDeletedAccounts() {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 30);
+    const before = accountsList.length;
+    accountsList = accountsList.filter(a => {
+      if (!a.deleted) return true;
+      if (!a.deletedAt) return true;
+      return new Date(a.deletedAt + 'T00:00:00') >= cutoff;
+    });
+    return accountsList.length !== before;
+  }
+
+  async function loadAccounts() {
+    const value = await localAdapter.get('accountsList');
+    accountsList = value ? JSON.parse(value) : [];
+    if (purgeOldDeletedAccounts()) await saveAccounts();
+  }
+
+  async function saveAccounts() {
+    await localAdapter.set('accountsList', JSON.stringify(accountsList));
+    if (firestoreReady && accountsDocRef) {
+      try {
+        suppressNextAccountsRender = true;
+        await accountsDocRef.set({
+          accounts: JSON.stringify(accountsList),
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      } catch (e) {
+        // fails silently, same as the other syncs, local copy still holds
+      }
+    }
+  }
+
+  function startAccountsSync() {
+    if (!firestoreReady || !accountsDocRef) return;
+    firebase.auth().onAuthStateChanged((user) => {
+      if (!user) return;
+      accountsDocRef.onSnapshot(
+        async (docSnap) => {
+          if (suppressNextAccountsRender) {
+            suppressNextAccountsRender = false;
+            return;
+          }
+          accountsList = docSnap.exists && docSnap.data().accounts ? JSON.parse(docSnap.data().accounts) : [];
+          localAdapter.set('accountsList', JSON.stringify(accountsList));
+          if (purgeOldDeletedAccounts()) await saveAccounts();
+          renderAccountsList();
+        },
+        () => {}
+      );
+    });
+  }
+
+  function renderAccountsList() {
+    renderPipelineDashboard();
+    renderDeletedAccountsPanel();
+    const listEl = document.getElementById('accountTrackerList');
+    if (!listEl) return;
+    listEl.innerHTML = '';
+    const active = activeAccounts();
+    if (active.length === 0) {
+      const empty = document.createElement('p');
+      empty.className = 'account-track-empty';
+      empty.textContent = 'No accounts tracked yet.';
+      listEl.appendChild(empty);
+      return;
+    }
+    const searchInput = document.getElementById('accountSearchInput');
+    const q = searchInput ? searchInput.value.trim().toLowerCase() : '';
+    let visible = active;
+    if (q) {
+      visible = active.filter(a => a.name.toLowerCase().includes(q));
+    }
+    if (visible.length === 0) {
+      const none = document.createElement('p');
+      none.className = 'account-track-empty';
+      none.textContent = 'No accounts match that search.';
+      listEl.appendChild(none);
+      return;
+    }
+    const statusOrder = { won: 0, working: 1, lost: 2, stalled: 3 };
+    const sorted = visible.slice().sort((a, b) => {
+      const sa = statusOrder[a.status] ?? 4;
+      const sb = statusOrder[b.status] ?? 4;
+      if (sa !== sb) return sa - sb;
+      return a.name.localeCompare(b.name);
+    });
+    sorted.forEach(acc => listEl.appendChild(renderAccountTrackItem(acc)));
+  }
+
+  // Everything here is computed fresh from accountsList each time, nothing
+  // extra is stored, so there's no separate total that can drift out of
+  // sync with the accounts themselves.
+  function renderDeletedAccountsPanel() {
+    const el = document.getElementById('deletedAccountsPanel');
+    if (!el) return;
+    el.innerHTML = '';
+    const deleted = accountsList.filter(a => a.deleted);
+    if (deleted.length === 0) return;
+
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'deleted-accounts-toggle';
+    toggle.textContent = (deletedAccountsExpanded ? 'Hide' : 'Show') + ' recently deleted (' + deleted.length + ')';
+    toggle.onclick = () => {
+      deletedAccountsExpanded = !deletedAccountsExpanded;
+      renderDeletedAccountsPanel();
+    };
+    el.appendChild(toggle);
+
+    if (!deletedAccountsExpanded) return;
+
+    const list = document.createElement('div');
+    list.className = 'deleted-accounts-list';
+    deleted
+      .slice()
+      .sort((a, b) => (b.deletedAt || '').localeCompare(a.deletedAt || ''))
+      .forEach(acc => {
+        const row = document.createElement('div');
+        row.className = 'deleted-account-item';
+
+        const info = document.createElement('div');
+        info.className = 'deleted-account-info';
+        const name = document.createElement('div');
+        name.className = 'deleted-account-name';
+        name.textContent = acc.name;
+        info.appendChild(name);
+        if (acc.deletedAt) {
+          const deletedDate = new Date(acc.deletedAt + 'T00:00:00');
+          const daysAgo = Math.floor((Date.now() - deletedDate.getTime()) / (1000 * 60 * 60 * 24));
+          const daysLeft = Math.max(0, 30 - daysAgo);
+          const sub = document.createElement('div');
+          sub.className = 'deleted-account-sub';
+          sub.textContent = 'Deleted ' + (daysAgo === 0 ? 'today' : daysAgo + ' day' + (daysAgo === 1 ? '' : 's') + ' ago') + ' \u00b7 clears permanently in ' + daysLeft + ' day' + (daysLeft === 1 ? '' : 's');
+          info.appendChild(sub);
+        }
+        row.appendChild(info);
+
+        const restoreBtn = document.createElement('button');
+        restoreBtn.className = 'deleted-account-restore';
+        restoreBtn.textContent = 'Restore';
+        restoreBtn.onclick = async () => {
+          acc.deleted = false;
+          acc.deletedAt = null;
+          touchAccountActivity(acc);
+          await saveAccounts();
+          renderAccountsList();
+          render();
+        };
+        row.appendChild(restoreBtn);
+
+        list.appendChild(row);
+      });
+    el.appendChild(list);
+  }
+
+  function renderPipelineDashboard() {
+    const el = document.getElementById('pipelineDashboard');
+    if (!el) return;
+    el.innerHTML = '';
+    const active = activeAccounts();
+    if (active.length === 0) return;
+
+    const currentYear = new Date().getFullYear();
+    const counts = { won: 0, working: 0, lost: 0, stalled: 0, unset: 0 };
+    let workingYtd = 0;
+    let wonYtd = 0;
+    active.forEach(acc => {
+      const s = acc.status || 'unset';
+      counts[s] = (counts[s] || 0) + 1;
+      const ytd = accountYearTotal(acc, currentYear);
+      if (acc.status === 'working') workingYtd += ytd;
+      if (acc.status === 'won') wonYtd += ytd;
+    });
+
+    const stats = [
+      { label: 'Working pipeline (YTD)', value: formatMoney(workingYtd), cls: 'working', sub: counts.working + ' account' + (counts.working === 1 ? '' : 's') },
+      { label: 'Won this year', value: formatMoney(wonYtd), cls: 'won', sub: counts.won + ' account' + (counts.won === 1 ? '' : 's') },
+      { label: 'Status breakdown', value: counts.won + 'W \u00b7 ' + counts.working + 'W \u00b7 ' + counts.lost + 'L \u00b7 ' + counts.stalled + 'S', cls: '', sub: 'Won \u00b7 Working \u00b7 Lost \u00b7 Stalled' },
+      { label: 'Total accounts tracked', value: String(active.length), cls: '', sub: currentYear + ' snapshot' }
+    ];
+
+    stats.forEach(s => {
+      const card = document.createElement('div');
+      card.className = 'pipeline-stat';
+      const label = document.createElement('p');
+      label.className = 'pipeline-stat-label';
+      label.textContent = s.label;
+      const value = document.createElement('div');
+      value.className = 'pipeline-stat-value' + (s.cls ? ' ' + s.cls : '');
+      value.textContent = s.value;
+      const sub = document.createElement('div');
+      sub.className = 'pipeline-stat-sub';
+      sub.textContent = s.sub;
+      card.appendChild(label);
+      card.appendChild(value);
+      card.appendChild(sub);
+      el.appendChild(card);
+    });
+  }
+
+  function accountYearTotal(acc, year) {
+    return (acc.documents || [])
+      .filter(d => getDocYear(d) === year)
+      .reduce((sum, d) => sum + (Number(d.value) || 0), 0);
+  }
+
+  function formatMoney(n) {
+    return '$' + Math.round(n).toLocaleString('en-US');
+  }
+
+  function quarterOf(dateStr) {
+    if (!dateStr) return null;
+    const d = new Date(dateStr + 'T00:00:00');
+    if (isNaN(d.getTime())) return null;
+    return Math.floor(d.getMonth() / 3) + 1;
+  }
+
+  // Prefer the quarter you explicitly picked when adding the project. Only
+  // falls back to guessing from the entry date for older entries logged
+  // before quarter selection existed.
+  function getDocQuarter(doc) {
+    if (doc.quarter) return doc.quarter;
+    return quarterOf(doc.date);
+  }
+  function getDocYear(doc) {
+    return doc.year || (doc.date ? new Date(doc.date + 'T00:00:00').getFullYear() : new Date().getFullYear());
+  }
+  function currentQuarter() {
+    return Math.floor(new Date().getMonth() / 3) + 1;
+  }
+
+  function parseYearInput(text) {
+    const n = parseInt((text || '').replace(/\D/g, ''), 10);
+    return (n >= 2000 && n <= 2100) ? n : new Date().getFullYear();
+  }
+
+  // Marks "something happened here" on an account, resets the check-in clock.
+  function touchAccountActivity(acc) {
+    acc.lastActivityAt = isoDate(new Date());
+  }
+
+  // 45 days the first time, 60 days every time after that, never on Lost
+  // accounts, and never if the person has switched it off for this account.
+  function isAccountStale(acc) {
+    if (acc.status === 'lost') return false;
+    if (acc.remindersEnabled === false) return false;
+    if (!acc.lastActivityAt) return false;
+    const last = new Date(acc.lastActivityAt + 'T00:00:00');
+    const daysSince = Math.floor((Date.now() - last.getTime()) / (1000 * 60 * 60 * 24));
+    const threshold = acc.staleDismissed ? 60 : 45;
+    return daysSince >= threshold;
+  }
+
+  function renderAccountTrackItem(acc) {
+    const wrap = document.createElement('div');
+    wrap.className = 'account-track-wrap';
+
+    const row = document.createElement('div');
+    row.className = 'account-track-item' + (acc.status ? ' status-' + acc.status : '');
+
+    const name = document.createElement('div');
+    name.className = 'account-track-name';
+    name.textContent = acc.name;
+    row.appendChild(name);
+
+    if (isAccountStale(acc)) {
+      const badge = document.createElement('button');
+      badge.type = 'button';
+      badge.className = 'account-stale-badge';
+      badge.textContent = '!';
+      const last = new Date(acc.lastActivityAt + 'T00:00:00');
+      const daysSince = Math.floor((Date.now() - last.getTime()) / (1000 * 60 * 60 * 24));
+      badge.title = 'No check-in logged in ' + daysSince + ' days. Tap once you have followed up.';
+      badge.onclick = async (e) => {
+        e.stopPropagation();
+        acc.lastActivityAt = isoDate(new Date());
+        acc.staleDismissed = true;
+        await saveAccounts();
+        renderAccountsList();
+      };
+      row.appendChild(badge);
+    }
+
+    const docCount = (acc.documents || []).length;
+    const docsBtn = document.createElement('button');
+    docsBtn.type = 'button';
+    docsBtn.className = 'account-track-docs-btn';
+    docsBtn.textContent = 'Docs' + (docCount ? ' (' + docCount + ')' : '');
+    docsBtn.onclick = () => {
+      if (expandedAccountDocs.has(acc.id)) {
+        expandedAccountDocs.delete(acc.id);
+      } else {
+        expandedAccountDocs.add(acc.id);
+      }
+      renderAccountsList();
+    };
+    row.appendChild(docsBtn);
+
+    const statusGroup = document.createElement('div');
+    statusGroup.className = 'btn-group';
+    ['won', 'working', 'lost', 'stalled'].forEach(statusVal => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn-group-option status-' + statusVal + (acc.status === statusVal ? ' active' : '');
+      btn.textContent = statusVal.charAt(0).toUpperCase();
+      btn.title = statusVal.charAt(0).toUpperCase() + statusVal.slice(1);
+      btn.onclick = async () => {
+        acc.status = (acc.status === statusVal) ? '' : statusVal;
+        touchAccountActivity(acc);
+        await saveAccounts();
+        renderAccountsList();
+        render();
+      };
+      statusGroup.appendChild(btn);
+    });
+    row.appendChild(statusGroup);
+
+    const del = document.createElement('button');
+    del.className = 'account-track-del';
+    del.textContent = '\u00d7';
+    del.onclick = () => {
+      pendingDeleteAccountId = acc.id;
+      renderAccountsList();
+    };
+    row.appendChild(del);
+
+    wrap.appendChild(row);
+
+    if (pendingDeleteAccountId === acc.id) {
+      const confirmBox = document.createElement('div');
+      confirmBox.className = 'account-delete-confirm';
+
+      const docCount = (acc.documents || []).length;
+      const msg = document.createElement('p');
+      msg.textContent = docCount > 0
+        ? 'Delete ' + acc.name + '? This also moves ' + docCount + ' tracked project' + (docCount === 1 ? '' : 's') + ' with it. It\'ll sit in Recently Deleted for 30 days in case you need it back.'
+        : 'Delete ' + acc.name + '? It\'ll sit in Recently Deleted for 30 days in case you need it back.';
+      confirmBox.appendChild(msg);
+
+      const btnRow = document.createElement('div');
+      btnRow.className = 'account-delete-confirm-btns';
+
+      const yesBtn = document.createElement('button');
+      yesBtn.className = 'account-delete-confirm-yes';
+      yesBtn.textContent = 'Yes, delete';
+      yesBtn.onclick = async () => {
+        acc.deleted = true;
+        acc.deletedAt = isoDate(new Date());
+        pendingDeleteAccountId = null;
+        await saveAccounts();
+        renderAccountsList();
+        render();
+      };
+      btnRow.appendChild(yesBtn);
+
+      const cancelBtn = document.createElement('button');
+      cancelBtn.className = 'account-delete-confirm-cancel';
+      cancelBtn.textContent = 'Cancel';
+      cancelBtn.onclick = () => {
+        pendingDeleteAccountId = null;
+        renderAccountsList();
+      };
+      btnRow.appendChild(cancelBtn);
+
+      confirmBox.appendChild(btnRow);
+      wrap.appendChild(confirmBox);
+    }
+
+    const currentYearTotal = accountYearTotal(acc, new Date().getFullYear());
+    const allTimeTotal = (acc.documents || []).reduce((sum, d) => sum + (Number(d.value) || 0), 0);
+    if (allTimeTotal > 0) {
+      const valueRow = document.createElement('div');
+      valueRow.className = 'account-track-value-row';
+      valueRow.textContent = formatMoney(currentYearTotal) + ' YTD \u00b7 ' + formatMoney(allTimeTotal) + ' all-time';
+      wrap.appendChild(valueRow);
+    }
+
+    if (expandedAccountDocs.has(acc.id)) {
+      wrap.appendChild(renderAccountDocsPanel(acc));
+    }
+
+    return wrap;
+  }
+
+  function normalizeUrl(url) {
+    const trimmed = url.trim();
+    if (!trimmed) return '';
+    return /^https?:\/\//i.test(trimmed) ? trimmed : 'https://' + trimmed;
+  }
+
+  function renderDocItem(acc, doc) {
+    if (editingDocIds.has(doc.id)) {
+      return renderDocEditForm(acc, doc);
+    }
+
+    const item = document.createElement('div');
+    item.className = 'account-doc-item';
+
+    const info = document.createElement('div');
+    info.className = 'account-doc-info';
+    const link = document.createElement('a');
+    link.href = doc.url;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.className = 'account-doc-link';
+    link.textContent = doc.title || doc.url;
+    info.appendChild(link);
+    if (doc.value) {
+      const valEl = document.createElement('div');
+      valEl.className = 'account-doc-value';
+      const q = getDocQuarter(doc);
+      const y = getDocYear(doc);
+      const when = q ? ('Q' + q + ' ' + y) : String(y);
+      valEl.textContent = formatMoney(Number(doc.value)) + (when ? ' \u00b7 ' + when : '');
+      info.appendChild(valEl);
+    }
+    item.appendChild(info);
+
+    const actions = document.createElement('div');
+    actions.className = 'account-doc-actions';
+
+    const editDoc = document.createElement('button');
+    editDoc.className = 'account-doc-edit';
+    editDoc.textContent = 'Edit';
+    editDoc.onclick = () => {
+      editingDocIds.add(doc.id);
+      renderAccountsList();
+    };
+    actions.appendChild(editDoc);
+
+    const delDoc = document.createElement('button');
+    delDoc.className = 'account-doc-del';
+    delDoc.textContent = '\u00d7';
+    delDoc.onclick = async () => {
+      acc.documents = (acc.documents || []).filter(d => d.id !== doc.id);
+      await saveAccounts();
+      renderAccountsList();
+    };
+    actions.appendChild(delDoc);
+
+    item.appendChild(actions);
+
+    return item;
+  }
+
+  function renderDocEditForm(acc, doc) {
+    const item = document.createElement('div');
+    item.className = 'account-doc-item account-doc-edit-item';
+
+    const titleInput = document.createElement('input');
+    titleInput.type = 'text';
+    titleInput.value = doc.title || '';
+    titleInput.placeholder = 'Project name';
+
+    const urlInput = document.createElement('input');
+    urlInput.type = 'text';
+    urlInput.value = doc.url || '';
+    urlInput.placeholder = 'Link';
+
+    const valueInput = document.createElement('input');
+    valueInput.type = 'text';
+    valueInput.inputMode = 'decimal';
+    valueInput.value = doc.value ? String(doc.value) : '';
+    valueInput.placeholder = 'Value';
+
+    const editRow = document.createElement('div');
+    editRow.className = 'account-doc-edit-row';
+    editRow.appendChild(titleInput);
+    editRow.appendChild(urlInput);
+    editRow.appendChild(valueInput);
+    item.appendChild(editRow);
+
+    const nowYear = new Date().getFullYear();
+    const periodRow = document.createElement('div');
+    periodRow.className = 'account-doc-period-row';
+
+    const quarterGroup = document.createElement('div');
+    quarterGroup.className = 'btn-group account-doc-quarter-group';
+    let selectedQuarter = getDocQuarter(doc) || currentQuarter();
+    [1, 2, 3, 4].forEach(qn => {
+      const qBtn = document.createElement('button');
+      qBtn.type = 'button';
+      qBtn.className = 'btn-group-option account-doc-quarter-btn' + (qn === selectedQuarter ? ' active' : '');
+      qBtn.textContent = 'Q' + qn;
+      qBtn.onclick = () => {
+        selectedQuarter = qn;
+        quarterGroup.querySelectorAll('.account-doc-quarter-btn').forEach(b => b.classList.remove('active'));
+        qBtn.classList.add('active');
+      };
+      quarterGroup.appendChild(qBtn);
+    });
+    periodRow.appendChild(quarterGroup);
+
+    const yearSelect = document.createElement('input');
+    yearSelect.type = 'text';
+    yearSelect.inputMode = 'numeric';
+    yearSelect.maxLength = 4;
+    yearSelect.className = 'account-doc-year-select';
+    const docYear = getDocYear(doc);
+    yearSelect.value = docYear;
+    periodRow.appendChild(yearSelect);
+    item.appendChild(periodRow);
+
+    const btnRow = document.createElement('div');
+    btnRow.className = 'account-doc-edit-btns';
+
+    const saveBtn = document.createElement('button');
+    saveBtn.className = 'account-doc-edit-save';
+    saveBtn.textContent = 'Save';
+    saveBtn.onclick = async () => {
+      const url = normalizeUrl(urlInput.value);
+      if (!url) return;
+      doc.title = titleInput.value.trim() || url;
+      doc.url = url;
+      const rawValue = valueInput.value.replace(/[^0-9.]/g, '');
+      doc.value = rawValue ? parseFloat(rawValue) : 0;
+      doc.quarter = selectedQuarter;
+      doc.year = parseYearInput(yearSelect.value);
+      editingDocIds.delete(doc.id);
+      touchAccountActivity(acc);
+      await saveAccounts();
+      renderAccountsList();
+    };
+    btnRow.appendChild(saveBtn);
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'account-doc-edit-cancel';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.onclick = () => {
+      editingDocIds.delete(doc.id);
+      renderAccountsList();
+    };
+    btnRow.appendChild(cancelBtn);
+
+    item.appendChild(btnRow);
+
+    return item;
+  }
+
+  function renderAccountDocsPanel(acc) {
+    const panel = document.createElement('div');
+    panel.className = 'account-docs-panel';
+
+    const docs = acc.documents || [];
+
+    // year-by-year breakdown, so older years stay visible even once the
+    // headline number next to the account name resets for a new year.
+    // Each year also breaks down by quarter where the date is known;
+    // older entries logged before quarters were tracked just show as
+    // "Unspecified" within that year.
+    const totalsByYear = {};
+    const quartersByYear = {};
+    docs.forEach(d => {
+      const y = getDocYear(d);
+      totalsByYear[y] = (totalsByYear[y] || 0) + (Number(d.value) || 0);
+      const q = getDocQuarter(d);
+      const qKey = q ? ('Q' + q) : 'Unspecified';
+      if (!quartersByYear[y]) quartersByYear[y] = {};
+      quartersByYear[y][qKey] = (quartersByYear[y][qKey] || 0) + (Number(d.value) || 0);
+    });
+    const years = Object.keys(totalsByYear).map(Number).sort((a, b) => b - a);
+    if (years.length && years.some(y => totalsByYear[y] > 0)) {
+      const yearsWrap = document.createElement('div');
+      yearsWrap.className = 'account-year-totals';
+      years.forEach(y => {
+        if (totalsByYear[y] <= 0) return;
+        const yearBlock = document.createElement('div');
+        yearBlock.className = 'account-year-block';
+
+        const yEl = document.createElement('span');
+        yEl.className = 'account-year-total';
+        yEl.textContent = y + ': ' + formatMoney(totalsByYear[y]);
+        yearBlock.appendChild(yEl);
+
+        const qOrder = ['Q1', 'Q2', 'Q3', 'Q4', 'Unspecified'];
+        const qParts = qOrder
+          .filter(q => quartersByYear[y][q] > 0)
+          .map(q => q + ' ' + formatMoney(quartersByYear[y][q]));
+        if (qParts.length > 1) {
+          const qEl = document.createElement('span');
+          qEl.className = 'account-quarter-totals';
+          qEl.textContent = qParts.join('  \u00b7  ');
+          yearBlock.appendChild(qEl);
+        }
+        yearsWrap.appendChild(yearBlock);
+      });
+      panel.appendChild(yearsWrap);
+    }
+
+    if (docs.length === 0) {
+      const empty = document.createElement('p');
+      empty.className = 'account-docs-empty';
+      empty.textContent = 'Nothing saved yet. Paste a link to a proposal, deck, or anything else worth keeping handy for this account.';
+      panel.appendChild(empty);
+    } else {
+      docs.slice().sort((a, b) => (b.year || 0) - (a.year || 0)).forEach(doc => {
+        panel.appendChild(renderDocItem(acc, doc));
+      });
+    }
+
+    const addRow = document.createElement('div');
+    addRow.className = 'account-doc-add-row';
+    const titleInput = document.createElement('input');
+    titleInput.type = 'text';
+    titleInput.placeholder = 'Project name, e.g. MI Gap Analysis';
+    const urlInput = document.createElement('input');
+    urlInput.type = 'text';
+    urlInput.placeholder = 'SharePoint, Teams, or Drive link';
+    const valueInput = document.createElement('input');
+    valueInput.type = 'text';
+    valueInput.inputMode = 'decimal';
+    valueInput.placeholder = 'Value (optional), e.g. 25000';
+    addRow.appendChild(titleInput);
+    addRow.appendChild(urlInput);
+    addRow.appendChild(valueInput);
+    panel.appendChild(addRow);
+
+    // Which quarter/year this project counts toward, separate from when
+    // it's actually being logged, since work often starts well ahead of
+    // the quarter it's really for.
+    const nowYear = new Date().getFullYear();
+    const periodRow = document.createElement('div');
+    periodRow.className = 'account-doc-period-row';
+
+    const quarterGroup = document.createElement('div');
+    quarterGroup.className = 'btn-group account-doc-quarter-group';
+    let selectedQuarter = currentQuarter();
+    [1, 2, 3, 4].forEach(qn => {
+      const qBtn = document.createElement('button');
+      qBtn.type = 'button';
+      qBtn.className = 'btn-group-option account-doc-quarter-btn' + (qn === selectedQuarter ? ' active' : '');
+      qBtn.textContent = 'Q' + qn;
+      qBtn.onclick = () => {
+        selectedQuarter = qn;
+        quarterGroup.querySelectorAll('.account-doc-quarter-btn').forEach(b => b.classList.remove('active'));
+        qBtn.classList.add('active');
+      };
+      quarterGroup.appendChild(qBtn);
+    });
+    periodRow.appendChild(quarterGroup);
+
+    const yearSelect = document.createElement('input');
+    yearSelect.type = 'text';
+    yearSelect.inputMode = 'numeric';
+    yearSelect.maxLength = 4;
+    yearSelect.className = 'account-doc-year-select';
+    yearSelect.value = nowYear;
+    periodRow.appendChild(yearSelect);
+    panel.appendChild(periodRow);
+
+    const addDocBtn = document.createElement('button');
+    addDocBtn.className = 'account-doc-add-btn';
+    addDocBtn.textContent = 'Add project';
+    addDocBtn.onclick = async () => {
+      const url = normalizeUrl(urlInput.value);
+      if (!url) return;
+      const title = titleInput.value.trim() || url;
+      const rawValue = valueInput.value.replace(/[^0-9.]/g, '');
+      const value = rawValue ? parseFloat(rawValue) : 0;
+      if (!acc.documents) acc.documents = [];
+      acc.documents.push({
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+        title: title,
+        url: url,
+        value: value,
+        year: parseYearInput(yearSelect.value),
+        quarter: selectedQuarter,
+        loggedAt: isoDate(new Date())
+      });
+      titleInput.value = '';
+      urlInput.value = '';
+      valueInput.value = '';
+      touchAccountActivity(acc);
+      await saveAccounts();
+      renderAccountsList();
+    };
+    panel.appendChild(addDocBtn);
+
+    const remindersRow = document.createElement('div');
+    remindersRow.className = 'account-reminders-row';
+    const remindersOn = acc.remindersEnabled !== false;
+    const remindersToggle = document.createElement('button');
+    remindersToggle.type = 'button';
+    remindersToggle.className = 'account-reminders-toggle' + (remindersOn ? '' : ' off');
+    remindersToggle.textContent = remindersOn ? 'Check-in reminders: On' : 'Check-in reminders: Off';
+    remindersToggle.onclick = async () => {
+      acc.remindersEnabled = !remindersOn;
+      await saveAccounts();
+      renderAccountsList();
+    };
+    remindersRow.appendChild(remindersToggle);
+    panel.appendChild(remindersRow);
+
+    return panel;
+  }
+
   function startSync() {
     if (!firestoreReady || !taskDocRef) {
       setSyncStatus('offline');
@@ -908,6 +2334,10 @@
           if (docSnap.exists) {
             const data = docSnap.data();
             tasks = data.tasks ? JSON.parse(data.tasks) : [];
+            if (data.collapsedAccounts) {
+              collapsedAccounts = new Set(JSON.parse(data.collapsedAccounts));
+              localAdapter.set('collapsedAccounts', data.collapsedAccounts);
+            }
           } else {
             tasks = [];
           }
@@ -949,8 +2379,9 @@
       account: account ? account.trim() : '',
       stakeholder: stakeholder ? stakeholder.trim() : '',
       priority: priority || '',
-      type: type || 'internal',
-      dueDate: dueDate || ''
+      type: type || '',
+      dueDate: dueDate || '',
+      comment: ''
     };
     tasks.push(t);
     return t;
@@ -983,21 +2414,25 @@
         + (lowCount ? ' &middot; <span class="count-low">' + lowCount + ' low</span>' : '');
     }
 
-    // build account filter options from this week's active accounts
-    const accounts = Array.from(new Set(
-      thisWeekTasks.filter(t => !t.completed && t.account).map(t => t.account)
-    )).sort();
-    const prevFilterVal = accountFilter.value;
+    // build account filter options from this week's active accounts,
+    // treating different capitalizations of the same name as one account
+    const accountDisplayByKey = new Map();
+    thisWeekTasks.filter(t => !t.completed && t.account).forEach(t => {
+      const key = accountKey(t.account);
+      if (!accountDisplayByKey.has(key)) accountDisplayByKey.set(key, t.account.trim());
+    });
+    const accounts = Array.from(accountDisplayByKey.values()).sort((a, b) => a.localeCompare(b));
+    const matchingDisplay = accounts.find(a => accountKey(a) === accountKey(activeAccountFilter));
+    activeAccountFilter = matchingDisplay || '';
     accountFilter.innerHTML = '<option value="">All accounts</option>' +
       accounts.map(a => '<option value="' + escapeAttr(a) + '">' + escapeHtml(a) + '</option>').join('');
-    accountFilter.value = accounts.includes(activeAccountFilter) ? activeAccountFilter : '';
-    activeAccountFilter = accountFilter.value;
+    accountFilter.value = activeAccountFilter;
     priorityFilter.value = activePriorityFilter;
     filterRow.style.display = thisWeekTasks.some(t => !t.completed) ? 'block' : 'none';
 
     let active = thisWeekTasks.filter(t => !t.completed);
     if (activeAccountFilter) {
-      active = active.filter(t => t.account === activeAccountFilter);
+      active = active.filter(t => accountKey(t.account) === accountKey(activeAccountFilter));
     }
     if (activePriorityFilter) {
       active = active.filter(t =>
@@ -1021,19 +2456,43 @@
         ? 'Nothing open for this account.'
         : 'Nothing on the list. Add something above.';
       listEl.appendChild(empty);
-    } else {
+    } else if (activeAccountFilter) {
+      // Already narrowed to one account via the filter, no need to group.
       active.forEach(t => listEl.appendChild(renderTask(t)));
+    } else {
+      const groups = {};
+      const unassigned = [];
+      active.forEach(t => {
+        if (t.account) {
+          const key = accountKey(t.account);
+          if (!groups[key]) groups[key] = { display: t.account.trim(), tasks: [] };
+          groups[key].tasks.push(t);
+        } else {
+          unassigned.push(t);
+        }
+      });
+      const groupKeys = Object.keys(groups).sort((a, b) => groups[a].display.localeCompare(groups[b].display));
+      groupKeys.forEach(key => {
+        listEl.appendChild(renderAccountGroup(groups[key].display, groups[key].tasks, key));
+      });
+      if (unassigned.length) {
+        if (groupKeys.length) {
+          const label = document.createElement('p');
+          label.className = 'unassigned-label';
+          label.textContent = 'No account';
+          listEl.appendChild(label);
+        }
+        unassigned.forEach(t => listEl.appendChild(renderTask(t)));
+      }
     }
 
-    archiveListEl.innerHTML = '';
-    done.forEach(t => archiveListEl.appendChild(renderTask(t)));
-    archiveToggle.style.display = done.length ? 'block' : 'none';
-    archiveToggle.textContent = archiveOpen
-      ? 'Hide completed (' + done.length + ')'
-      : 'Show completed (' + done.length + ')';
-    archiveSection.style.display = archiveOpen ? 'block' : 'none';
-
     renderHistory();
+  }
+
+  // Treats account names as the same account regardless of capitalization
+  // or stray spacing ("Agilent Tech" == "agilent tech" == " Agilent Tech ").
+  function accountKey(name) {
+    return (name || '').trim().toLowerCase();
   }
 
   function escapeHtml(s) {
@@ -1044,6 +2503,8 @@
   function escapeAttr(s) {
     return escapeHtml(s).replace(/"/g, '&quot;');
   }
+
+  let historyWeekCollapseOverride = new Map();
 
   function renderHistory() {
     const q = (historySearch && historySearch.value || '').trim().toLowerCase();
@@ -1074,84 +2535,175 @@
       return;
     }
 
-    // group by week, most recent week first
+    // Grouped by week, most recent first. The 3 most recent weeks are
+    // always shown in full, no click needed, since that's the stuff most
+    // worth seeing at a glance. Anything older tucks behind a per-week
+    // toggle so the page doesn't turn into an endless scroll.
     const weeks = Array.from(new Set(completed.map(t => t.week))).sort((a, b) => b.localeCompare(a));
 
-    weeks.forEach(week => {
-      const header = document.createElement('div');
-      header.className = 'history-week-header';
-      header.textContent = 'Week of ' + fmtRange(week);
-      historyResults.appendChild(header);
-
+    weeks.forEach((week, index) => {
       const weekTasks = completed
         .filter(t => t.week === week)
         .sort((a, b) => (b.completedAt || '').localeCompare(a.completedAt || ''));
 
-      weekTasks.forEach(t => {
-        const item = document.createElement('div');
-        item.className = 'history-item';
-        const text = document.createElement('div');
-        text.className = 'task-text';
-        text.textContent = t.text;
-        item.appendChild(text);
+      const defaultCollapsed = index >= 3;
+      const isCollapsed = historyWeekCollapseOverride.has(week)
+        ? historyWeekCollapseOverride.get(week)
+        : defaultCollapsed;
 
-        const tags = document.createElement('div');
-        tags.className = 'task-tags';
-        if (t.priority) {
-          const prioTag = document.createElement('span');
-          prioTag.className = 'prio-tag prio-' + t.priority;
-          prioTag.textContent = t.priority;
-          tags.appendChild(prioTag);
-        }
-        const typeTag = document.createElement('span');
-        typeTag.className = 'type-tag type-' + (t.type || 'internal');
-        typeTag.textContent = t.type === 'external' ? 'External' : 'Internal';
-        tags.appendChild(typeTag);
-        if (t.account) {
-          const acctTag = document.createElement('span');
-          acctTag.className = 'account-tag';
-          acctTag.textContent = t.account;
-          tags.appendChild(acctTag);
-        }
-        if (t.stakeholder) {
-          const stakeTag = document.createElement('span');
-          stakeTag.className = 'stakeholder-tag';
-          stakeTag.textContent = t.stakeholder;
-          tags.appendChild(stakeTag);
-        }
-        if (t.dueDate) {
-          const dueTag = document.createElement('span');
-          dueTag.className = 'due-tag';
-          dueTag.textContent = 'Was due ' + new Date(t.dueDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-          tags.appendChild(dueTag);
-        }
-        item.appendChild(tags);
+      const header = document.createElement('button');
+      header.type = 'button';
+      header.className = 'history-week-header' + (isCollapsed ? ' collapsed' : '');
+      header.textContent = 'Week of ' + fmtRange(week) + ' \u00b7 ' + weekTasks.length + (weekTasks.length === 1 ? ' task' : ' tasks');
+      header.onclick = () => {
+        historyWeekCollapseOverride.set(week, !isCollapsed);
+        renderHistory();
+      };
+      historyResults.appendChild(header);
 
-        const dateEl = document.createElement('div');
-        dateEl.className = 'history-date';
-        dateEl.textContent = t.completedAt
-          ? 'Completed ' + new Date(t.completedAt + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-          : 'Completion date not recorded';
-        item.appendChild(dateEl);
-
-        const reopen = document.createElement('button');
-        reopen.className = 'history-reopen';
-        reopen.textContent = 'Reopen onto this week';
-        reopen.onclick = async () => {
-          t.completed = false;
-          t.completedAt = null;
-          t.week = todayWeek;
-          await saveTasks();
-          render();
-        };
-        item.appendChild(reopen);
-
-        historyResults.appendChild(item);
-      });
+      if (!isCollapsed) {
+        weekTasks.forEach(t => historyResults.appendChild(renderHistoryItem(t)));
+      }
     });
   }
 
-  function renderTask(t) {
+  function renderHistoryItem(t) {
+    const item = document.createElement('div');
+    item.className = 'history-item';
+    const text = document.createElement('div');
+    text.className = 'task-text';
+    text.textContent = t.text;
+    item.appendChild(text);
+
+    const tags = document.createElement('div');
+    tags.className = 'task-tags';
+    if (t.priority) {
+      const prioTag = document.createElement('span');
+      prioTag.className = 'prio-tag prio-' + t.priority;
+      prioTag.textContent = t.priority;
+      tags.appendChild(prioTag);
+    }
+    if (t.type) {
+      const typeTag = document.createElement('span');
+      typeTag.className = 'type-tag type-' + t.type;
+      typeTag.textContent = t.type === 'external' ? 'External' : 'Internal';
+      tags.appendChild(typeTag);
+    }
+    if (t.stakeholder) {
+      const stakeTag = document.createElement('span');
+      stakeTag.className = 'stakeholder-tag';
+      stakeTag.textContent = t.stakeholder;
+      tags.appendChild(stakeTag);
+    }
+    if (t.dueDate) {
+      const dueTag = document.createElement('span');
+      dueTag.className = 'due-tag';
+      dueTag.textContent = 'Was due ' + new Date(t.dueDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      tags.appendChild(dueTag);
+    }
+    item.appendChild(tags);
+
+    if (t.comment) {
+      const commentEl = document.createElement('div');
+      commentEl.className = 'task-comment-text';
+      commentEl.style.marginTop = '6px';
+      commentEl.style.cursor = 'default';
+      commentEl.textContent = t.comment;
+      item.appendChild(commentEl);
+    }
+
+    const dateEl = document.createElement('div');
+    dateEl.className = 'history-date';
+    dateEl.textContent = t.completedAt
+      ? 'Completed ' + new Date(t.completedAt + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      : 'Completion date not recorded';
+    item.appendChild(dateEl);
+
+    const actionsRow = document.createElement('div');
+    actionsRow.className = 'history-actions';
+
+    const reopen = document.createElement('button');
+    reopen.className = 'history-reopen';
+    reopen.textContent = 'Reopen onto this week';
+    reopen.onclick = async () => {
+      t.completed = false;
+      t.completedAt = null;
+      t.week = todayWeek;
+      await saveTasks();
+      render();
+    };
+    actionsRow.appendChild(reopen);
+
+    const del = document.createElement('button');
+    del.className = 'history-del';
+    del.textContent = 'Delete';
+    del.onclick = async () => {
+      tasks = tasks.filter(x => x.id !== t.id);
+      await saveTasks();
+      render();
+    };
+    actionsRow.appendChild(del);
+
+    item.appendChild(actionsRow);
+
+    return item;
+  }
+
+  function renderAccountGroup(accountName, tasksArr, groupKey) {
+    const key = groupKey || accountKey(accountName);
+    const wrap = document.createElement('div');
+    wrap.className = 'account-group';
+
+    const collapsed = collapsedAccounts.has(key);
+
+    const header = document.createElement('div');
+    header.className = 'account-group-header' + (collapsed ? ' collapsed' : '');
+
+    const nameEl = document.createElement('span');
+    nameEl.className = 'account-group-name';
+    const trackedAccount = activeAccounts().find(a => accountKey(a.name) === key);
+    if (trackedAccount && trackedAccount.status) {
+      const dot = document.createElement('span');
+      dot.className = 'account-status-dot';
+      dot.style.background = 'var(--status-' + trackedAccount.status + ')';
+      dot.title = trackedAccount.status.charAt(0).toUpperCase() + trackedAccount.status.slice(1);
+      nameEl.appendChild(dot);
+    }
+    nameEl.appendChild(document.createTextNode(accountName));
+
+    const countEl = document.createElement('span');
+    countEl.className = 'account-group-count';
+    countEl.textContent = tasksArr.length + (tasksArr.length === 1 ? ' task' : ' tasks');
+
+    const caret = document.createElement('span');
+    caret.className = 'account-group-caret';
+    caret.textContent = collapsed ? '\u25b8' : '\u25be';
+
+    header.appendChild(nameEl);
+    header.appendChild(countEl);
+    header.appendChild(caret);
+    header.onclick = () => {
+      if (collapsedAccounts.has(key)) {
+        collapsedAccounts.delete(key);
+      } else {
+        collapsedAccounts.add(key);
+      }
+      render();
+      saveTasks();
+    };
+    wrap.appendChild(header);
+
+    if (!collapsed) {
+      const body = document.createElement('div');
+      body.className = 'account-group-body';
+      tasksArr.forEach(t => body.appendChild(renderTask(t, true)));
+      wrap.appendChild(body);
+    }
+
+    return wrap;
+  }
+
+  function renderTask(t, hideAccountTag) {
     const wrap = document.createElement('div');
 
     const priority = t.priority || '';
@@ -1178,11 +2730,13 @@
       prioTag.textContent = priority;
       tags.appendChild(prioTag);
     }
-    const typeTag = document.createElement('span');
-    typeTag.className = 'type-tag type-' + (t.type || 'internal');
-    typeTag.textContent = t.type === 'external' ? 'External' : 'Internal';
-    tags.appendChild(typeTag);
-    if (t.account) {
+    if (t.type) {
+      const typeTag = document.createElement('span');
+      typeTag.className = 'type-tag type-' + t.type;
+      typeTag.textContent = t.type === 'external' ? 'External' : 'Internal';
+      tags.appendChild(typeTag);
+    }
+    if (t.account && !hideAccountTag) {
       const acctTag = document.createElement('span');
       acctTag.className = 'account-tag';
       acctTag.textContent = t.account;
@@ -1208,6 +2762,56 @@
       meta.className = 'task-meta';
       meta.textContent = 'Carried over from last week';
       body.appendChild(meta);
+    }
+
+    const commentWrap = document.createElement('div');
+    commentWrap.className = 'task-comment-wrap';
+
+    if (pendingCommentEdit === t.id) {
+      const textarea = document.createElement('textarea');
+      textarea.className = 'task-comment-input';
+      textarea.value = t.comment || '';
+      textarea.placeholder = 'e.g. Sent to legal 8/25, waiting on their signature';
+      commentWrap.appendChild(textarea);
+
+      const btnRow = document.createElement('div');
+      btnRow.className = 'task-comment-btns';
+      const saveBtn = document.createElement('button');
+      saveBtn.className = 'task-comment-save';
+      saveBtn.textContent = 'Save';
+      saveBtn.onclick = async () => {
+        t.comment = textarea.value.trim();
+        pendingCommentEdit = null;
+        await saveTasks();
+        render();
+      };
+      const cancelBtn = document.createElement('button');
+      cancelBtn.className = 'task-comment-cancel';
+      cancelBtn.textContent = 'Cancel';
+      cancelBtn.onclick = () => {
+        pendingCommentEdit = null;
+        render();
+      };
+      btnRow.appendChild(saveBtn);
+      btnRow.appendChild(cancelBtn);
+      commentWrap.appendChild(btnRow);
+      body.appendChild(commentWrap);
+      setTimeout(() => textarea.focus(), 0);
+    } else if (t.comment) {
+      const commentText = document.createElement('div');
+      commentText.className = 'task-comment-text';
+      commentText.textContent = t.comment;
+      commentText.title = 'Tap to edit';
+      commentText.onclick = () => { pendingCommentEdit = t.id; render(); };
+      commentWrap.appendChild(commentText);
+      body.appendChild(commentWrap);
+    } else {
+      const addLink = document.createElement('button');
+      addLink.className = 'task-comment-add';
+      addLink.textContent = '+ Add comment';
+      addLink.onclick = () => { pendingCommentEdit = t.id; render(); };
+      commentWrap.appendChild(addLink);
+      body.appendChild(commentWrap);
     }
 
     const actions = document.createElement('div');
@@ -1246,133 +2850,32 @@
     row.appendChild(actions);
     wrap.appendChild(row);
 
-    if (pendingFollowup === t.id) {
-      wrap.appendChild(renderFollowupBox(t));
-    }
-
     return wrap;
-  }
-
-  function renderFollowupBox(t) {
-    const box = document.createElement('div');
-    box.className = 'followup-box';
-
-    const p = document.createElement('p');
-    p.textContent = 'Nice work. Create a follow-up task?';
-    box.appendChild(p);
-
-    const row = document.createElement('div');
-    row.className = 'row';
-    const followInput = document.createElement('input');
-    followInput.type = 'text';
-    followInput.placeholder = 'e.g. Confirm they received the proposal';
-    row.appendChild(followInput);
-    box.appendChild(row);
-
-    const row2 = document.createElement('div');
-    row2.className = 'row';
-    row2.style.marginTop = '6px';
-    const followAccount = document.createElement('input');
-    followAccount.type = 'text';
-    followAccount.placeholder = 'Account name (optional)';
-    followAccount.value = t.account || '';
-    const followStakeholder = document.createElement('input');
-    followStakeholder.type = 'text';
-    followStakeholder.placeholder = 'Stakeholder (optional)';
-    followStakeholder.value = t.stakeholder || '';
-    row2.appendChild(followAccount);
-    row2.appendChild(followStakeholder);
-    box.appendChild(row2);
-
-    const row3 = document.createElement('div');
-    row3.className = 'row';
-    row3.style.marginTop = '6px';
-    const followPriority = document.createElement('select');
-    followPriority.innerHTML = '<option value=""></option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option>';
-    followPriority.value = t.priority || '';
-    const followType = document.createElement('select');
-    followType.innerHTML = '<option value="internal" selected>Internal</option><option value="external">External</option>';
-    followType.value = t.type || 'internal';
-    row3.appendChild(followPriority);
-    row3.appendChild(followType);
-    box.appendChild(row3);
-
-    const btns = document.createElement('div');
-    btns.className = 'btns';
-
-    const save = document.createElement('button');
-    save.className = 'save';
-    save.textContent = 'Add for this week';
-    save.onclick = async () => {
-      if (followInput.value.trim()) {
-        addTask(followInput.value, viewedWeek, false, followAccount.value, followPriority.value, followStakeholder.value, followType.value);
-        await saveTasks();
-      }
-      pendingFollowup = null;
-      render();
-    };
-
-    const saveNext = document.createElement('button');
-    saveNext.className = 'skip';
-    saveNext.textContent = 'Add for next week';
-    saveNext.onclick = async () => {
-      if (followInput.value.trim()) {
-        const nextMonday = new Date(viewedWeek + 'T00:00:00');
-        nextMonday.setDate(nextMonday.getDate() + 7);
-        addTask(followInput.value, isoDate(nextMonday), false, followAccount.value, followPriority.value, followStakeholder.value, followType.value);
-        await saveTasks();
-      }
-      pendingFollowup = null;
-      render();
-    };
-
-    const skip = document.createElement('button');
-    skip.className = 'skip';
-    skip.textContent = 'No thanks';
-    skip.onclick = () => {
-      pendingFollowup = null;
-      render();
-    };
-
-    btns.appendChild(save);
-    btns.appendChild(saveNext);
-    btns.appendChild(skip);
-    box.appendChild(btns);
-
-    followInput.focus();
-    followInput.onkeydown = (e) => { if (e.key === 'Enter') save.click(); };
-
-    return box;
   }
 
   async function onToggle(t) {
     t.completed = !t.completed;
     t.completedAt = t.completed ? isoDate(new Date()) : null;
-    if (t.completed) {
-      pendingFollowup = t.id;
-    } else if (pendingFollowup === t.id) {
-      pendingFollowup = null;
-    }
     await saveTasks();
     render();
   }
 
   async function onDelete(t) {
     tasks = tasks.filter(x => x.id !== t.id);
-    if (pendingFollowup === t.id) pendingFollowup = null;
     await saveTasks();
     render();
   }
 
   addBtn.onclick = async () => {
     if (input.value.trim()) {
-      addTask(input.value, viewedWeek, false, accountInput.value, prioritySelect.value, stakeholderInput.value, typeSelect.value, dueDateInput.value);
+      addTask(input.value, viewedWeek, false, accountInput.value, prioritySelect.value, stakeholderInput.value, typeSelect.value, resolveDueDate());
       input.value = '';
       accountInput.value = '';
       stakeholderInput.value = '';
-      dueDateInput.value = '';
-      prioritySelect.value = '';
-      typeSelect.value = 'internal';
+      dueMonthInput.value = '';
+      dueDayInput.value = '';
+      setPriorityValue('');
+      setTypeValue('internal');
       await saveTasks();
       render();
       input.focus();
@@ -1381,11 +2884,6 @@
   input.onkeydown = (e) => { if (e.key === 'Enter') addBtn.click(); };
   accountInput.onkeydown = (e) => { if (e.key === 'Enter') addBtn.click(); };
   stakeholderInput.onkeydown = (e) => { if (e.key === 'Enter') addBtn.click(); };
-
-  archiveToggle.onclick = () => {
-    archiveOpen = !archiveOpen;
-    render();
-  };
 
   accountFilter.onchange = () => {
     activeAccountFilter = accountFilter.value;
@@ -1399,199 +2897,6 @@
 
   if (historySearch) {
     historySearch.oninput = () => renderHistory();
-  }
-
-  // Voice capture: speak a task and have it fill in the form fields.
-  const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
-  let recognition = null;
-  let isListening = false;
-
-  if (SpeechRecognitionCtor) {
-    recognition = new SpeechRecognitionCtor();
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.lang = 'en-US';
-
-    recognition.onstart = () => {
-      isListening = true;
-      micBtn.classList.add('listening');
-      voiceStatus.textContent = 'Listening... say the task, account, who it is for, priority, or a day it is due.';
-    };
-
-    recognition.onend = () => {
-      isListening = false;
-      micBtn.classList.remove('listening');
-    };
-
-    recognition.onerror = (e) => {
-      isListening = false;
-      micBtn.classList.remove('listening');
-      if (e.error === 'not-allowed' || e.error === 'permission-denied') {
-        voiceStatus.textContent = 'Mic access was blocked. Allow microphone permission and try again.';
-      } else if (e.error === 'no-speech') {
-        voiceStatus.textContent = 'Did not catch anything. Try again.';
-      } else {
-        voiceStatus.textContent = 'Voice input hit an error (' + e.error + ').';
-      }
-    };
-
-    recognition.onresult = (e) => {
-      const transcript = e.results[0][0].transcript;
-      fillFormFromVoice(transcript);
-    };
-
-    micBtn.onclick = () => {
-      if (isListening) {
-        recognition.stop();
-        return;
-      }
-      voiceStatus.textContent = '';
-      try {
-        recognition.start();
-      } catch (e) {
-        voiceStatus.textContent = 'Could not start listening. Try again.';
-      }
-    };
-  } else {
-    // Voice input isn't supported here (this covers iOS Safari, which has
-    // never implemented the browser speech recognition API). Hide the mic
-    // rather than show a button that can't do anything.
-    micBtn.style.display = 'none';
-  }
-
-  // Pulls a due date, priority, account, stakeholder, and type out of a spoken
-  // sentence using plain pattern matching. No network call, so it works the
-  // same whether this file is opened locally or used inside Claude.ai.
-  function parseVoiceTranscript(rawText, todayDate) {
-    let text = rawText.trim();
-    let working = text;
-    const weekdays = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-    const months = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
-
-    let dueDate = '';
-    let m;
-
-    // explicit numeric date: 8/21 or 8-21-2026
-    m = working.match(/\b(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?\b/);
-    if (m) {
-      const month = parseInt(m[1], 10) - 1;
-      const day = parseInt(m[2], 10);
-      const year = m[3] ? (m[3].length === 2 ? 2000 + parseInt(m[3], 10) : parseInt(m[3], 10)) : todayDate.getFullYear();
-      const d = new Date(year, month, day);
-      if (!isNaN(d.getTime())) {
-        dueDate = isoDate(d);
-        working = working.replace(m[0], ' ');
-      }
-    }
-
-    // month name + day: "August 21" or "Aug 21st"
-    if (!dueDate) {
-      const monthRe = new RegExp('\\b(' + months.join('|') + ')\\.?\\s+(\\d{1,2})(?:st|nd|rd|th)?\\b', 'i');
-      m = working.match(monthRe);
-      if (m) {
-        const monthIdx = months.indexOf(m[1].toLowerCase());
-        const day = parseInt(m[2], 10);
-        let year = todayDate.getFullYear();
-        let d = new Date(year, monthIdx, day);
-        if (d.getTime() < new Date(todayDate.getFullYear(), todayDate.getMonth(), todayDate.getDate()).getTime()) {
-          d = new Date(year + 1, monthIdx, day);
-        }
-        dueDate = isoDate(d);
-        working = working.replace(m[0], ' ');
-      }
-    }
-
-    // tomorrow / today
-    if (!dueDate) {
-      if (/\btomorrow\b/i.test(working)) {
-        const d = new Date(todayDate);
-        d.setDate(d.getDate() + 1);
-        dueDate = isoDate(d);
-        working = working.replace(/\btomorrow\b/i, ' ');
-      } else if (/\btoday\b/i.test(working)) {
-        dueDate = isoDate(todayDate);
-        working = working.replace(/\btoday\b/i, ' ');
-      }
-    }
-
-    // weekday name, with optional "next"
-    if (!dueDate) {
-      const wdRe = new RegExp('\\b(next\\s+)?(' + weekdays.join('|') + ')\\b', 'i');
-      m = working.match(wdRe);
-      if (m) {
-        const targetIdx = weekdays.indexOf(m[2].toLowerCase());
-        const todayIdx = todayDate.getDay();
-        let diff = (targetIdx - todayIdx + 7) % 7;
-        if (diff === 0) diff = 7;
-        if (m[1]) diff += 7;
-        const d = new Date(todayDate);
-        d.setDate(d.getDate() + diff);
-        dueDate = isoDate(d);
-        working = working.replace(m[0], ' ');
-      }
-    }
-
-    // priority
-    let priority = '';
-    if (/\bhigh priority\b|\burgent\b|\basap\b|\bcritical\b/i.test(working)) {
-      priority = 'high';
-      working = working.replace(/\bhigh priority\b|\burgent\b|\basap\b|\bcritical\b/gi, ' ');
-    } else if (/\blow priority\b|\bwhenever\b|\bno rush\b|\bnot urgent\b/i.test(working)) {
-      priority = 'low';
-      working = working.replace(/\blow priority\b|\bwhenever\b|\bno rush\b|\bnot urgent\b/gi, ' ');
-    } else if (/\bmedium priority\b|\bnormal priority\b/i.test(working)) {
-      priority = 'medium';
-      working = working.replace(/\bmedium priority\b|\bnormal priority\b/gi, ' ');
-    }
-
-    // internal vs external
-    let type = 'internal';
-    if (/\bexternal\b|\bclient\b|\bcustomer\b|\bprospect\b/i.test(working)) {
-      type = 'external';
-    }
-    working = working.replace(/\b(external|internal)\b/gi, ' ');
-
-    // stakeholder: "with <Name>"
-    let stakeholder = '';
-    m = working.match(/\bwith\s+([A-Z][\w'-]*(?:\s+[A-Z][\w'-]*){0,2})/);
-    if (m) stakeholder = m[1].trim();
-
-    // account: "at <Company>"
-    let account = '';
-    m = working.match(/\bat\s+([A-Z][\w'&.-]*(?:\s+[A-Z][\w'&.-]*){0,3})/);
-    if (m) account = m[1].trim();
-
-    // fallback: a capitalized phrase leading into "with" ("Agilent Technologies with Ron...")
-    if (!account) {
-      m = working.match(/^\s*([A-Z][\w'&.-]*(?:\s+[A-Z][\w'&.-]*){0,3})\s+with\b/);
-      if (m) account = m[1].trim();
-    }
-
-    // fallback: "for <Company>"
-    if (!account) {
-      m = working.match(/\bfor\s+([A-Z][\w'&.-]*(?:\s+[A-Z][\w'&.-]*){0,3})\b/);
-      if (m) account = m[1].trim();
-    }
-
-    // task text: keep the full sentence, just trim common lead-in filler
-    let task = text.replace(/^(please\s+|remind me to\s+|add a task to\s+|i need to\s+|need to\s+)/i, '').trim();
-    task = task.replace(/\s+/g, ' ');
-    if (task.length) task = task.charAt(0).toUpperCase() + task.slice(1);
-
-    return { task, account, stakeholder, priority, type, dueDate };
-  }
-
-  function fillFormFromVoice(transcript) {
-    const parsed = parseVoiceTranscript(transcript, new Date());
-
-    input.value = parsed.task || transcript;
-    accountInput.value = parsed.account || '';
-    stakeholderInput.value = parsed.stakeholder || '';
-    prioritySelect.value = ['high', 'medium', 'low'].includes(parsed.priority) ? parsed.priority : '';
-    typeSelect.value = parsed.type === 'external' ? 'external' : 'internal';
-    dueDateInput.value = parsed.dueDate || '';
-
-    voiceStatus.textContent = 'Filled in from your voice note, best guess. Double check before hitting Add.';
   }
 
   prevWeekBtn.onclick = () => {
@@ -1632,6 +2937,84 @@
 
   importBtn.onclick = () => importFile.click();
 
+  const exportAccountsBtn = document.getElementById('exportAccountsBtn');
+  if (exportAccountsBtn) {
+    exportAccountsBtn.onclick = () => {
+      const currentYear = new Date().getFullYear();
+      const rows = [['Account', 'Status', 'YTD Value', 'All-Time Value', 'Projects']];
+      accountsList.forEach(acc => {
+        if (acc.deleted) return;
+        const ytd = accountYearTotal(acc, currentYear);
+        const allTime = (acc.documents || []).reduce((sum, d) => sum + (Number(d.value) || 0), 0);
+        const docCount = (acc.documents || []).length;
+        const escapedName = '"' + acc.name.replace(/"/g, '""') + '"';
+        rows.push([escapedName, acc.status || '', ytd, allTime, docCount]);
+      });
+      const csv = rows.map(r => r.join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'accounts-' + isoDate(new Date()) + '.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    };
+  }
+
+  // Quarter report: filter every project across every account down to one
+  // quarter and year, export as its own spreadsheet.
+  const reportQuarterGroup = document.getElementById('reportQuarterGroup');
+  const reportYearSelect = document.getElementById('reportYearSelect');
+  const exportQuarterReportBtn = document.getElementById('exportQuarterReportBtn');
+
+  if (reportQuarterGroup && reportYearSelect && exportQuarterReportBtn) {
+    reportYearSelect.value = new Date().getFullYear();
+
+    let selectedReportQuarter = currentQuarter();
+    const quarterBtns = reportQuarterGroup.querySelectorAll('.report-quarter-btn');
+    quarterBtns.forEach(b => {
+      if (parseInt(b.dataset.value, 10) === selectedReportQuarter) b.classList.add('active');
+      b.onclick = () => {
+        selectedReportQuarter = parseInt(b.dataset.value, 10);
+        quarterBtns.forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
+      };
+    });
+
+    exportQuarterReportBtn.onclick = () => {
+      const year = parseYearInput(reportYearSelect.value);
+      const rows = [['Account', 'Project', 'Value', 'Link', 'Quarter', 'Year']];
+      accountsList.forEach(acc => {
+        if (acc.deleted) return;
+        (acc.documents || []).forEach(doc => {
+          if (getDocYear(doc) === year && getDocQuarter(doc) === selectedReportQuarter) {
+            const escapedAccount = '"' + acc.name.replace(/"/g, '""') + '"';
+            const escapedTitle = '"' + (doc.title || '').replace(/"/g, '""') + '"';
+            const escapedUrl = '"' + (doc.url || '').replace(/"/g, '""') + '"';
+            rows.push([escapedAccount, escapedTitle, Number(doc.value) || 0, escapedUrl, 'Q' + selectedReportQuarter, year]);
+          }
+        });
+      });
+      if (rows.length === 1) {
+        statusMsg.textContent = 'No projects found for Q' + selectedReportQuarter + ' ' + year + '.';
+        return;
+      }
+      const csv = rows.map(r => r.join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'Q' + selectedReportQuarter + '-' + year + '-report.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    };
+  }
+
+
   importFile.onchange = async () => {
     const file = importFile.files[0];
     if (!file) return;
@@ -1666,6 +3049,54 @@
     notesArea.addEventListener('input', scheduleNotesSave);
   }
 
+  const newAccountTrackerInput = document.getElementById('newAccountTrackerInput');
+  const accountStatusBtnGroup = document.getElementById('accountStatusBtnGroup');
+  const newAccountTrackerStatus = document.getElementById('newAccountTrackerStatus');
+  const addAccountTrackerBtn = document.getElementById('addAccountTrackerBtn');
+
+  function setAccountTrackerStatus(v) {
+    newAccountTrackerStatus.value = v;
+    accountStatusBtnGroup.querySelectorAll('.btn-group-option').forEach(b => {
+      b.classList.toggle('active', b.dataset.value === v);
+    });
+  }
+  accountStatusBtnGroup.querySelectorAll('.btn-group-option').forEach(b => {
+    b.onclick = () => setAccountTrackerStatus(newAccountTrackerStatus.value === b.dataset.value ? '' : b.dataset.value);
+  });
+  setAccountTrackerStatus('working');
+
+  addAccountTrackerBtn.onclick = async () => {
+    const name = newAccountTrackerInput.value.trim();
+    if (!name) return;
+    const key = accountKey(name);
+    const existing = activeAccounts().find(a => accountKey(a.name) === key);
+    if (existing) {
+      existing.status = newAccountTrackerStatus.value;
+      touchAccountActivity(existing);
+    } else {
+      accountsList.push({
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+        name: name,
+        status: newAccountTrackerStatus.value,
+        documents: [],
+        lastActivityAt: isoDate(new Date()),
+        staleDismissed: false,
+        remindersEnabled: true
+      });
+    }
+    newAccountTrackerInput.value = '';
+    setAccountTrackerStatus('working');
+    await saveAccounts();
+    renderAccountsList();
+    render();
+  };
+  newAccountTrackerInput.onkeydown = (e) => { if (e.key === 'Enter') addAccountTrackerBtn.click(); };
+
+  const accountSearchInput = document.getElementById('accountSearchInput');
+  if (accountSearchInput) {
+    accountSearchInput.addEventListener('input', renderAccountsList);
+  }
+
   (async function init() {
     await loadTasks();
     const moved = rollOverdueForward();
@@ -1674,6 +3105,9 @@
     if (moved > 0) await saveTasks();
     await loadNotes();
     startNotesSync();
+    await loadAccounts();
+    renderAccountsList();
+    startAccountsSync();
   })();
 })();
 </script>

@@ -726,6 +726,22 @@
     text-align: center;
   }
   .account-doc-year-select:focus { outline: none; border-color: var(--accent); }
+  .account-doc-won-toggle {
+    flex-shrink: 0;
+    background: var(--bg);
+    border: 1px solid var(--panel-border);
+    color: var(--text-dim);
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .account-doc-won-toggle.active {
+    background: var(--status-won);
+    color: #fff;
+    border-color: transparent;
+  }
   .account-doc-add-btn {
     width: 100%;
     margin-top: 6px;
@@ -1902,6 +1918,16 @@
       .reduce((sum, d) => sum + (Number(d.value) || 0), 0);
   }
 
+  function accountAllTimeTotal(acc) {
+    return (acc.documents || []).reduce((sum, d) => sum + (Number(d.value) || 0), 0);
+  }
+
+  function accountWonTotal(acc) {
+    return (acc.documents || [])
+      .filter(d => d.won)
+      .reduce((sum, d) => sum + (Number(d.value) || 0), 0);
+  }
+
   function formatMoney(n) {
     return '$' + Math.round(n).toLocaleString('en-US');
   }
@@ -2065,11 +2091,12 @@
     }
 
     const currentYearTotal = accountYearTotal(acc, new Date().getFullYear());
-    const allTimeTotal = (acc.documents || []).reduce((sum, d) => sum + (Number(d.value) || 0), 0);
+    const allTimeTotal = accountAllTimeTotal(acc);
+    const wonTotal = accountWonTotal(acc);
     if (allTimeTotal > 0) {
       const valueRow = document.createElement('div');
       valueRow.className = 'account-track-value-row';
-      valueRow.textContent = formatMoney(currentYearTotal) + ' YTD \u00b7 ' + formatMoney(allTimeTotal) + ' all-time';
+      valueRow.textContent = formatMoney(currentYearTotal) + ' YTD \u00b7 ' + formatMoney(allTimeTotal) + ' all-time \u00b7 ' + formatMoney(wonTotal) + ' won';
       wrap.appendChild(valueRow);
     }
 
@@ -2109,7 +2136,7 @@
       const q = getDocQuarter(doc);
       const y = getDocYear(doc);
       const when = q ? ('Q' + q + ' ' + y) : String(y);
-      valEl.textContent = formatMoney(Number(doc.value)) + (when ? ' \u00b7 ' + when : '');
+      valEl.textContent = formatMoney(Number(doc.value)) + (when ? ' \u00b7 ' + when : '') + (doc.won ? ' \u00b7 Won' : '');
       info.appendChild(valEl);
     }
     item.appendChild(info);
@@ -2197,6 +2224,17 @@
     const docYear = getDocYear(doc);
     yearSelect.value = docYear;
     periodRow.appendChild(yearSelect);
+
+    let wonState = !!doc.won;
+    const wonBtn = document.createElement('button');
+    wonBtn.type = 'button';
+    wonBtn.className = 'account-doc-won-toggle' + (wonState ? ' active' : '');
+    wonBtn.textContent = 'Won';
+    wonBtn.onclick = () => {
+      wonState = !wonState;
+      wonBtn.classList.toggle('active', wonState);
+    };
+    periodRow.appendChild(wonBtn);
     item.appendChild(periodRow);
 
     const btnRow = document.createElement('div');
@@ -2214,6 +2252,7 @@
       doc.value = rawValue ? parseFloat(rawValue) : 0;
       doc.quarter = selectedQuarter;
       doc.year = parseYearInput(yearSelect.value);
+      doc.won = wonState;
       editingDocIds.delete(doc.id);
       touchAccountActivity(acc);
       await saveAccounts();
@@ -2344,6 +2383,17 @@
     yearSelect.className = 'account-doc-year-select';
     yearSelect.value = nowYear;
     periodRow.appendChild(yearSelect);
+
+    let newDocWon = false;
+    const wonBtn = document.createElement('button');
+    wonBtn.type = 'button';
+    wonBtn.className = 'account-doc-won-toggle';
+    wonBtn.textContent = 'Won';
+    wonBtn.onclick = () => {
+      newDocWon = !newDocWon;
+      wonBtn.classList.toggle('active', newDocWon);
+    };
+    periodRow.appendChild(wonBtn);
     panel.appendChild(periodRow);
 
     const addDocBtn = document.createElement('button');
@@ -2363,11 +2413,14 @@
         value: value,
         year: parseYearInput(yearSelect.value),
         quarter: selectedQuarter,
+        won: newDocWon,
         loggedAt: isoDate(new Date())
       });
       titleInput.value = '';
       urlInput.value = '';
       valueInput.value = '';
+      newDocWon = false;
+      wonBtn.classList.remove('active');
       touchAccountActivity(acc);
       await saveAccounts();
       renderAccountsList();
@@ -3160,15 +3213,16 @@
     exportAccountsBtn.onclick = () => {
       const currentYear = new Date().getFullYear();
 
-      const summaryRows = [['Account', 'Status', 'YTD Value', 'All-Time Value', 'Projects']];
-      const projectRows = [['Account', 'Status', 'Project', 'Value', 'Quarter', 'Year', 'Link']];
+      const summaryRows = [['Account', 'Status', 'YTD Value', 'All-Time Value', 'Won Value', 'Projects']];
+      const projectRows = [['Account', 'Status', 'Project', 'Value', 'Won', 'Quarter', 'Year', 'Link']];
 
       accountsList.forEach(acc => {
         if (acc.deleted) return;
         const ytd = accountYearTotal(acc, currentYear);
-        const allTime = (acc.documents || []).reduce((sum, d) => sum + (Number(d.value) || 0), 0);
+        const allTime = accountAllTimeTotal(acc);
+        const won = accountWonTotal(acc);
         const docCount = (acc.documents || []).length;
-        summaryRows.push([acc.name, acc.status || '', ytd, allTime, docCount]);
+        summaryRows.push([acc.name, acc.status || '', ytd, allTime, won, docCount]);
 
         (acc.documents || []).forEach(doc => {
           const q = getDocQuarter(doc);
@@ -3177,6 +3231,7 @@
             acc.status || '',
             doc.title || '',
             Number(doc.value) || 0,
+            doc.won ? 'Yes' : 'No',
             q ? ('Q' + q) : '',
             getDocYear(doc),
             doc.url || ''

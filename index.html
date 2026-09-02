@@ -1149,14 +1149,22 @@
     font-weight: 500;
   }
   .history-week-header::after {
-    content: '\u25be';
+    content: "\25BE";
     float: right;
     text-transform: none;
   }
   .history-week-header.collapsed::after {
-    content: '\u25b8';
+    content: "\25B8";
   }
   .history-week-header:first-child { margin-top: 8px; }
+  .history-account-subheader {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--text-dim);
+    margin: 10px 0 4px 4px;
+  }
   .history-date {
     font-size: 11px;
     color: var(--text-dim);
@@ -2562,7 +2570,36 @@
       historyResults.appendChild(header);
 
       if (!isCollapsed) {
-        weekTasks.forEach(t => historyResults.appendChild(renderHistoryItem(t)));
+        // Sub-group by account within the week, lighter treatment than the
+        // open-task account cards since this is meant to stay a quick scan.
+        const groups = {};
+        const unassigned = [];
+        weekTasks.forEach(t => {
+          if (t.account) {
+            const key = accountKey(t.account);
+            if (!groups[key]) groups[key] = { display: t.account.trim(), tasks: [] };
+            groups[key].tasks.push(t);
+          } else {
+            unassigned.push(t);
+          }
+        });
+        const groupKeys = Object.keys(groups).sort((a, b) => groups[a].display.localeCompare(groups[b].display));
+        groupKeys.forEach(key => {
+          const sub = document.createElement('p');
+          sub.className = 'history-account-subheader';
+          sub.textContent = groups[key].display;
+          historyResults.appendChild(sub);
+          groups[key].tasks.forEach(t => historyResults.appendChild(renderHistoryItem(t)));
+        });
+        if (unassigned.length) {
+          if (groupKeys.length) {
+            const sub = document.createElement('p');
+            sub.className = 'history-account-subheader';
+            sub.textContent = 'No account';
+            historyResults.appendChild(sub);
+          }
+          unassigned.forEach(t => historyResults.appendChild(renderHistoryItem(t)));
+        }
       }
     });
   }

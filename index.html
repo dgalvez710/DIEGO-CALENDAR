@@ -1300,11 +1300,6 @@
     color: var(--accent);
     margin: 10px 0 4px 4px;
   }
-  .history-date {
-    font-size: 11px;
-    color: var(--text-dim);
-    margin-top: 4px;
-  }
   .history-actions {
     display: flex;
     gap: 6px;
@@ -2965,13 +2960,6 @@
       commentEl.textContent = t.comment;
       item.appendChild(commentEl);
     }
-
-    const dateEl = document.createElement('div');
-    dateEl.className = 'history-date';
-    dateEl.textContent = t.completedAt
-      ? 'Completed ' + new Date(t.completedAt + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-      : 'Completion date not recorded';
-    item.appendChild(dateEl);
 
     const actionsRow = document.createElement('div');
     actionsRow.className = 'history-actions';

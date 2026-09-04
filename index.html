@@ -32,6 +32,7 @@
     --status-lost: #b5544a;
     --status-stalled: #8b909c;
     --status-active: #4caf82;
+    --save-blue: #3a7ecf;
   }
   * { box-sizing: border-box; }
   html, body { overflow-x: hidden; max-width: 100%; }
@@ -454,6 +455,37 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+  .account-track-name.editable { cursor: pointer; }
+  .account-track-name.editable:hover { color: var(--accent); text-decoration: underline; }
+  .account-name-edit-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .account-name-edit-input {
+    flex: 1;
+    min-width: 0;
+    box-sizing: border-box;
+    background: var(--bg);
+    border: 1px solid var(--accent);
+    color: var(--text);
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 14.5px;
+    font-weight: 600;
+  }
+  .account-name-edit-input:focus { outline: none; }
+  .account-name-edit-save, .account-name-edit-cancel {
+    flex-shrink: 0;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .account-name-edit-save { background: var(--save-blue); color: #fff; }
+  .account-name-edit-cancel { background: var(--panel); color: var(--text-dim); border: 1px solid var(--panel-border); }
   .account-track-value-row {
     font-size: 12px;
     color: var(--text-dim);
@@ -498,8 +530,8 @@
   }
   .account-track-item .btn-group-option {
     flex: none;
-    min-width: 30px;
-    padding: 5px 7px;
+    min-width: 22px;
+    padding: 5px 6px;
     font-size: 11px;
   }
   .account-track-del {
@@ -674,7 +706,7 @@
     font-weight: 600;
     cursor: pointer;
   }
-  .account-doc-edit-save { background: var(--accent); color: #fff; }
+  .account-doc-edit-save { background: var(--save-blue); color: #fff; }
   .account-doc-edit-cancel { background: var(--panel); color: var(--text-dim); border: 1px solid var(--panel-border); }
   .account-doc-add-row {
     display: flex;
@@ -923,7 +955,7 @@
     font-weight: 600;
     cursor: pointer;
   }
-  .task-comment-save { background: var(--accent); color: #fff; }
+  .task-comment-save { background: var(--save-blue); color: #fff; }
   .task-comment-cancel { background: var(--panel); color: var(--text-dim); border: 1px solid var(--panel-border); }
   .task-tags {
     display: flex;
@@ -1436,10 +1468,10 @@
     <div class="account-add-row">
       <input type="text" id="newAccountTrackerInput" placeholder="Account name" />
       <div class="btn-group" id="accountStatusBtnGroup">
-        <button type="button" class="btn-group-option status-won" data-value="won">Won</button>
-        <button type="button" class="btn-group-option status-working" data-value="working">Working</button>
-        <button type="button" class="btn-group-option status-stalled" data-value="stalled">Stalled</button>
-        <button type="button" class="btn-group-option status-lost" data-value="lost">Lost</button>
+        <button type="button" class="btn-group-option status-won" data-value="won" title="Won">W</button>
+        <button type="button" class="btn-group-option status-working" data-value="working" title="Developing">D</button>
+        <button type="button" class="btn-group-option status-stalled" data-value="stalled" title="Stalled">S</button>
+        <button type="button" class="btn-group-option status-lost" data-value="lost" title="Lost">L</button>
       </div>
       <input type="hidden" id="newAccountTrackerStatus" value="working" />
       <button type="button" id="addAccountTrackerBtn">Add account</button>
@@ -1560,6 +1592,7 @@
   let collapsedAccounts = new Set();
   let expandedAccountDocs = new Set();
   let pendingDeleteAccountId = null;
+  let editingAccountNameId = null;
   let editingDocIds = new Set();
   let activeAccountFilter = '';
   let activePriorityFilter = '';
@@ -1938,10 +1971,10 @@
     });
 
     const stats = [
-      { label: 'Working pipeline (YTD)', value: formatMoney(workingYtd), cls: 'working', sub: projectCounts.working + ' project' + (projectCounts.working === 1 ? '' : 's') },
+      { label: 'Developing pipeline (YTD)', value: formatMoney(workingYtd), cls: 'working', sub: projectCounts.working + ' project' + (projectCounts.working === 1 ? '' : 's') },
       { label: 'Won this year', value: formatMoney(wonYtd), cls: 'won', sub: projectCounts.won + ' project' + (projectCounts.won === 1 ? '' : 's') },
-      { label: 'Project status', value: projectCounts.won + 'W \u00b7 ' + projectCounts.working + 'W \u00b7 ' + projectCounts.lost + 'L \u00b7 ' + projectCounts.stalled + 'S', cls: '', sub: 'Won \u00b7 Working \u00b7 Lost \u00b7 Stalled' },
-      { label: 'Accounts tracked', value: String(active.length), cls: '', sub: accountCounts.won + ' won, ' + accountCounts.working + ' working, ' + accountCounts.lost + ' lost, ' + accountCounts.stalled + ' stalled' }
+      { label: 'Project status', value: projectCounts.won + 'W \u00b7 ' + projectCounts.working + 'D \u00b7 ' + projectCounts.lost + 'L \u00b7 ' + projectCounts.stalled + 'S', cls: '', sub: 'Won \u00b7 Developing \u00b7 Lost \u00b7 Stalled' },
+      { label: 'Accounts tracked', value: String(active.length), cls: '', sub: accountCounts.won + ' won, ' + accountCounts.working + ' developing, ' + accountCounts.lost + ' lost, ' + accountCounts.stalled + ' stalled' }
     ];
 
     stats.forEach(s => {
@@ -1984,6 +2017,13 @@
   // status existed.
   function getDocStatus(doc) {
     return doc.status || (doc.won ? 'won' : '');
+  }
+
+  // "working" is stored as-is internally (keeps all the existing logic and
+  // CSS untouched), this just controls what word actually shows on screen.
+  function statusLabel(statusVal) {
+    if (statusVal === 'working') return 'Developing';
+    return statusVal.charAt(0).toUpperCase() + statusVal.slice(1);
   }
 
   function formatMoney(n) {
@@ -2037,12 +2077,60 @@
     const wrap = document.createElement('div');
     wrap.className = 'account-track-wrap';
 
+    if (editingAccountNameId === acc.id) {
+      const editRow = document.createElement('div');
+      editRow.className = 'account-track-item account-name-edit-row';
+
+      const nameInput = document.createElement('input');
+      nameInput.type = 'text';
+      nameInput.className = 'account-name-edit-input';
+      nameInput.value = acc.name;
+      editRow.appendChild(nameInput);
+
+      const saveNameBtn = document.createElement('button');
+      saveNameBtn.className = 'account-name-edit-save';
+      saveNameBtn.textContent = 'Save';
+      const commitRename = async () => {
+        const newName = nameInput.value.trim();
+        if (newName) {
+          acc.name = newName;
+          touchAccountActivity(acc);
+          await saveAccounts();
+        }
+        editingAccountNameId = null;
+        renderAccountsList();
+        render();
+      };
+      saveNameBtn.onclick = commitRename;
+      editRow.appendChild(saveNameBtn);
+
+      const cancelNameBtn = document.createElement('button');
+      cancelNameBtn.className = 'account-name-edit-cancel';
+      cancelNameBtn.textContent = 'Cancel';
+      cancelNameBtn.onclick = () => {
+        editingAccountNameId = null;
+        renderAccountsList();
+      };
+      editRow.appendChild(cancelNameBtn);
+
+      nameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') commitRename(); });
+
+      wrap.appendChild(editRow);
+      setTimeout(() => { nameInput.focus(); nameInput.select(); }, 0);
+      return wrap;
+    }
+
     const row = document.createElement('div');
     row.className = 'account-track-item' + (acc.status ? ' status-' + acc.status : '');
 
     const name = document.createElement('div');
-    name.className = 'account-track-name';
+    name.className = 'account-track-name editable';
     name.textContent = acc.name;
+    name.title = 'Tap to rename';
+    name.onclick = () => {
+      editingAccountNameId = acc.id;
+      renderAccountsList();
+    };
     row.appendChild(name);
 
     if (isAccountStale(acc)) {
@@ -2080,11 +2168,11 @@
 
     const statusGroup = document.createElement('div');
     statusGroup.className = 'btn-group';
-    [['won', 'Won'], ['working', 'Working'], ['stalled', 'Stalled'], ['lost', 'Lost']].forEach(([statusVal, label]) => {
+    [['won', 'Won', 'W'], ['working', 'Developing', 'D'], ['stalled', 'Stalled', 'S'], ['lost', 'Lost', 'L']].forEach(([statusVal, label, short]) => {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'btn-group-option status-' + statusVal + (acc.status === statusVal ? ' active' : '');
-      btn.textContent = label;
+      btn.textContent = short;
       btn.title = label;
       btn.onclick = async () => {
         acc.status = (acc.status === statusVal) ? '' : statusVal;
@@ -2201,7 +2289,7 @@
     if (docStatus) {
       const statusTag = document.createElement('span');
       statusTag.className = 'account-doc-status-tag status-' + docStatus;
-      statusTag.textContent = docStatus.charAt(0).toUpperCase() + docStatus.slice(1);
+      statusTag.textContent = statusLabel(docStatus);
       info.appendChild(statusTag);
     }
     item.appendChild(info);
@@ -2300,7 +2388,7 @@
     let selectedDocStatus = getDocStatus(doc);
     const statusGroup = document.createElement('div');
     statusGroup.className = 'btn-group account-doc-status-group';
-    [['won', 'Won'], ['working', 'Working'], ['stalled', 'Stalled'], ['lost', 'Lost']].forEach(([val, label]) => {
+    [['won', 'Won'], ['working', 'Developing'], ['stalled', 'Stalled'], ['lost', 'Lost']].forEach(([val, label]) => {
       const sBtn = document.createElement('button');
       sBtn.type = 'button';
       sBtn.className = 'btn-group-option status-' + val + (selectedDocStatus === val ? ' active' : '');
@@ -2413,8 +2501,6 @@
       });
     }
 
-    const isEditingSomethingInThisAccount = docs.some(d => editingDocIds.has(d.id));
-
     const addRow = document.createElement('div');
     addRow.className = 'account-doc-add-row';
     const titleInput = document.createElement('input');
@@ -2424,7 +2510,7 @@
     panel.appendChild(addRow);
 
     const extraFieldsWrap = document.createElement('div');
-    extraFieldsWrap.className = 'account-doc-add-extra' + (isEditingSomethingInThisAccount ? ' collapsed' : '');
+    extraFieldsWrap.className = 'account-doc-add-extra collapsed';
 
     const urlInput = document.createElement('input');
     urlInput.type = 'text';
@@ -2480,7 +2566,7 @@
     let newDocStatus = '';
     const statusGroup = document.createElement('div');
     statusGroup.className = 'btn-group account-doc-status-group';
-    [['won', 'Won'], ['working', 'Working'], ['stalled', 'Stalled'], ['lost', 'Lost']].forEach(([val, label]) => {
+    [['won', 'Won'], ['working', 'Developing'], ['stalled', 'Stalled'], ['lost', 'Lost']].forEach(([val, label]) => {
       const sBtn = document.createElement('button');
       sBtn.type = 'button';
       sBtn.className = 'btn-group-option status-' + val;
@@ -2496,11 +2582,9 @@
 
     panel.appendChild(extraFieldsWrap);
 
-    if (isEditingSomethingInThisAccount) {
-      const revealOnFocus = () => extraFieldsWrap.classList.remove('collapsed');
-      titleInput.addEventListener('focus', revealOnFocus);
-      titleInput.addEventListener('click', revealOnFocus);
-    }
+    const revealOnFocus = () => extraFieldsWrap.classList.remove('collapsed');
+    titleInput.addEventListener('focus', revealOnFocus);
+    titleInput.addEventListener('click', revealOnFocus);
 
     const addDocBtn = document.createElement('button');
     addDocBtn.className = 'account-doc-add-btn';
@@ -2936,7 +3020,7 @@
       const dot = document.createElement('span');
       dot.className = 'account-status-dot';
       dot.style.background = 'var(--status-' + trackedAccount.status + ')';
-      dot.title = trackedAccount.status.charAt(0).toUpperCase() + trackedAccount.status.slice(1);
+      dot.title = statusLabel(trackedAccount.status);
       nameEl.appendChild(dot);
     }
     nameEl.appendChild(document.createTextNode(accountName));

@@ -31,6 +31,7 @@
     --status-working: #ccb02e;
     --status-lost: #b5544a;
     --status-stalled: #8b909c;
+    --status-active: #4caf82;
   }
   * { box-sizing: border-box; }
   html, body { overflow-x: hidden; max-width: 100%; }
@@ -216,7 +217,8 @@
   .btn-group-option.status-won,
   .btn-group-option.status-working,
   .btn-group-option.status-lost,
-  .btn-group-option.status-stalled {
+  .btn-group-option.status-stalled,
+  .btn-group-option.status-active {
     color: #fff;
     border-color: transparent;
     opacity: 0.5;
@@ -230,6 +232,7 @@
   .btn-group-option.status-working { background: var(--status-working); }
   .btn-group-option.status-lost { background: var(--status-lost); }
   .btn-group-option.status-stalled { background: var(--status-stalled); }
+  .btn-group-option.status-active { background: var(--status-active); }
 
   .btn-group-option.prio-high.active,
   .btn-group-option.prio-medium.active,
@@ -239,7 +242,8 @@
   .btn-group-option.status-won.active,
   .btn-group-option.status-working.active,
   .btn-group-option.status-lost.active,
-  .btn-group-option.status-stalled.active {
+  .btn-group-option.status-stalled.active,
+  .btn-group-option.status-active.active {
     opacity: 1;
     box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.55) inset;
   }
@@ -440,6 +444,7 @@
   .account-track-item.status-working { border-left-color: var(--status-working); }
   .account-track-item.status-lost { border-left-color: var(--status-lost); }
   .account-track-item.status-stalled { border-left-color: var(--status-stalled); }
+  .account-track-item.status-active { border-left-color: var(--status-active); }
   .account-track-name {
     flex: 1;
     min-width: 0;
@@ -688,6 +693,24 @@
     font-size: 13px;
   }
   .account-doc-add-row input[type="text"]:focus { outline: none; border-color: var(--accent); }
+  .account-doc-add-extra {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .account-doc-add-extra.collapsed { display: none; }
+  .account-doc-add-extra-input {
+    box-sizing: border-box;
+    width: 100%;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    color: var(--text);
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    margin-top: 6px;
+  }
+  .account-doc-add-extra-input:focus { outline: none; border-color: var(--accent); }
   .account-doc-period-row {
     display: flex;
     align-items: center;
@@ -726,22 +749,21 @@
     text-align: center;
   }
   .account-doc-year-select:focus { outline: none; border-color: var(--accent); }
-  .account-doc-won-toggle {
-    flex-shrink: 0;
-    background: var(--bg);
-    border: 1px solid var(--panel-border);
-    color: var(--text-dim);
-    padding: 6px 10px;
-    border-radius: 6px;
-    font-size: 12px;
+  .account-doc-status-group {
+    margin-bottom: 10px;
+  }
+  .account-doc-status-tag {
+    display: block;
+    font-size: 11px;
     font-weight: 600;
-    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-top: 3px;
   }
-  .account-doc-won-toggle.active {
-    background: var(--status-won);
-    color: #fff;
-    border-color: transparent;
-  }
+  .account-doc-status-tag.status-won { color: var(--status-won); }
+  .account-doc-status-tag.status-working { color: var(--status-working); }
+  .account-doc-status-tag.status-lost { color: var(--status-lost); }
+  .account-doc-status-tag.status-stalled { color: var(--status-stalled); }
   .account-doc-add-btn {
     width: 100%;
     margin-top: 6px;
@@ -1416,8 +1438,8 @@
       <div class="btn-group" id="accountStatusBtnGroup">
         <button type="button" class="btn-group-option status-won" data-value="won">Won</button>
         <button type="button" class="btn-group-option status-working" data-value="working">Working</button>
-        <button type="button" class="btn-group-option status-lost" data-value="lost">Lost</button>
         <button type="button" class="btn-group-option status-stalled" data-value="stalled">Stalled</button>
+        <button type="button" class="btn-group-option status-lost" data-value="lost">Lost</button>
       </div>
       <input type="hidden" id="newAccountTrackerStatus" value="working" />
       <button type="button" id="addAccountTrackerBtn">Add account</button>
@@ -1723,10 +1745,30 @@
     return accountsList.length !== before;
   }
 
+  // Account status used to be Won/Working/Lost/Stalled. Now that Won/Lost
+  // live on individual projects instead, accounts just carry Active or
+  // Stalled. This maps any old account records over to the new scheme,
+  // once, the first time they're loaded.
+  function migrateAccountStatuses() {
+    // "active" only shows up if an account was saved during the brief
+    // window this ran a two-option Active/Stalled scheme.
+    const map = { active: 'working' };
+    let changed = false;
+    accountsList.forEach(acc => {
+      if (acc.status && map[acc.status]) {
+        acc.status = map[acc.status];
+        changed = true;
+      }
+    });
+    return changed;
+  }
+
   async function loadAccounts() {
     const value = await localAdapter.get('accountsList');
     accountsList = value ? JSON.parse(value) : [];
-    if (purgeOldDeletedAccounts()) await saveAccounts();
+    const purged = purgeOldDeletedAccounts();
+    const migrated = migrateAccountStatuses();
+    if (purged || migrated) await saveAccounts();
   }
 
   async function saveAccounts() {
@@ -1756,7 +1798,9 @@
           }
           accountsList = docSnap.exists && docSnap.data().accounts ? JSON.parse(docSnap.data().accounts) : [];
           localAdapter.set('accountsList', JSON.stringify(accountsList));
-          if (purgeOldDeletedAccounts()) await saveAccounts();
+          const purged = purgeOldDeletedAccounts();
+          const migrated = migrateAccountStatuses();
+          if (purged || migrated) await saveAccounts();
           renderAccountsList();
         },
         () => {}
@@ -1875,22 +1919,29 @@
     if (active.length === 0) return;
 
     const currentYear = new Date().getFullYear();
-    const counts = { won: 0, working: 0, lost: 0, stalled: 0, unset: 0 };
+    const accountCounts = { won: 0, working: 0, lost: 0, stalled: 0, unset: 0 };
+    const projectCounts = { won: 0, working: 0, lost: 0, stalled: 0 };
     let workingYtd = 0;
     let wonYtd = 0;
     active.forEach(acc => {
       const s = acc.status || 'unset';
-      counts[s] = (counts[s] || 0) + 1;
-      const ytd = accountYearTotal(acc, currentYear);
-      if (acc.status === 'working') workingYtd += ytd;
-      if (acc.status === 'won') wonYtd += ytd;
+      accountCounts[s] = (accountCounts[s] || 0) + 1;
+      (acc.documents || []).forEach(d => {
+        const docStatus = getDocStatus(d);
+        if (docStatus) projectCounts[docStatus] = (projectCounts[docStatus] || 0) + 1;
+        if (getDocYear(d) === currentYear) {
+          const val = Number(d.value) || 0;
+          if (docStatus === 'working') workingYtd += val;
+          if (docStatus === 'won') wonYtd += val;
+        }
+      });
     });
 
     const stats = [
-      { label: 'Working pipeline (YTD)', value: formatMoney(workingYtd), cls: 'working', sub: counts.working + ' account' + (counts.working === 1 ? '' : 's') },
-      { label: 'Won this year', value: formatMoney(wonYtd), cls: 'won', sub: counts.won + ' account' + (counts.won === 1 ? '' : 's') },
-      { label: 'Status breakdown', value: counts.won + 'W \u00b7 ' + counts.working + 'W \u00b7 ' + counts.lost + 'L \u00b7 ' + counts.stalled + 'S', cls: '', sub: 'Won \u00b7 Working \u00b7 Lost \u00b7 Stalled' },
-      { label: 'Total accounts tracked', value: String(active.length), cls: '', sub: currentYear + ' snapshot' }
+      { label: 'Working pipeline (YTD)', value: formatMoney(workingYtd), cls: 'working', sub: projectCounts.working + ' project' + (projectCounts.working === 1 ? '' : 's') },
+      { label: 'Won this year', value: formatMoney(wonYtd), cls: 'won', sub: projectCounts.won + ' project' + (projectCounts.won === 1 ? '' : 's') },
+      { label: 'Project status', value: projectCounts.won + 'W \u00b7 ' + projectCounts.working + 'W \u00b7 ' + projectCounts.lost + 'L \u00b7 ' + projectCounts.stalled + 'S', cls: '', sub: 'Won \u00b7 Working \u00b7 Lost \u00b7 Stalled' },
+      { label: 'Accounts tracked', value: String(active.length), cls: '', sub: accountCounts.won + ' won, ' + accountCounts.working + ' working, ' + accountCounts.lost + ' lost, ' + accountCounts.stalled + ' stalled' }
     ];
 
     stats.forEach(s => {
@@ -1924,8 +1975,15 @@
 
   function accountWonTotal(acc) {
     return (acc.documents || [])
-      .filter(d => d.won)
+      .filter(d => getDocStatus(d) === 'won')
       .reduce((sum, d) => sum + (Number(d.value) || 0), 0);
+  }
+
+  // A project's own status: won, working, lost, or stalled. Falls back to
+  // the old "won" boolean for anything logged before individual project
+  // status existed.
+  function getDocStatus(doc) {
+    return doc.status || (doc.won ? 'won' : '');
   }
 
   function formatMoney(n) {
@@ -1966,7 +2024,7 @@
   // 45 days the first time, 60 days every time after that, never on Lost
   // accounts, and never if the person has switched it off for this account.
   function isAccountStale(acc) {
-    if (acc.status === 'lost') return false;
+    if (acc.status === 'stalled' || acc.status === 'lost') return false;
     if (acc.remindersEnabled === false) return false;
     if (!acc.lastActivityAt) return false;
     const last = new Date(acc.lastActivityAt + 'T00:00:00');
@@ -2022,12 +2080,12 @@
 
     const statusGroup = document.createElement('div');
     statusGroup.className = 'btn-group';
-    ['won', 'working', 'lost', 'stalled'].forEach(statusVal => {
+    [['won', 'Won'], ['working', 'Working'], ['stalled', 'Stalled'], ['lost', 'Lost']].forEach(([statusVal, label]) => {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'btn-group-option status-' + statusVal + (acc.status === statusVal ? ' active' : '');
-      btn.textContent = statusVal.charAt(0).toUpperCase();
-      btn.title = statusVal.charAt(0).toUpperCase() + statusVal.slice(1);
+      btn.textContent = label;
+      btn.title = label;
       btn.onclick = async () => {
         acc.status = (acc.status === statusVal) ? '' : statusVal;
         touchAccountActivity(acc);
@@ -2136,8 +2194,15 @@
       const q = getDocQuarter(doc);
       const y = getDocYear(doc);
       const when = q ? ('Q' + q + ' ' + y) : String(y);
-      valEl.textContent = formatMoney(Number(doc.value)) + (when ? ' \u00b7 ' + when : '') + (doc.won ? ' \u00b7 Won' : '');
+      valEl.textContent = formatMoney(Number(doc.value)) + (when ? ' \u00b7 ' + when : '');
       info.appendChild(valEl);
+    }
+    const docStatus = getDocStatus(doc);
+    if (docStatus) {
+      const statusTag = document.createElement('span');
+      statusTag.className = 'account-doc-status-tag status-' + docStatus;
+      statusTag.textContent = docStatus.charAt(0).toUpperCase() + docStatus.slice(1);
+      info.appendChild(statusTag);
     }
     item.appendChild(info);
 
@@ -2224,18 +2289,30 @@
     const docYear = getDocYear(doc);
     yearSelect.value = docYear;
     periodRow.appendChild(yearSelect);
-
-    let wonState = !!doc.won;
-    const wonBtn = document.createElement('button');
-    wonBtn.type = 'button';
-    wonBtn.className = 'account-doc-won-toggle' + (wonState ? ' active' : '');
-    wonBtn.textContent = 'Won';
-    wonBtn.onclick = () => {
-      wonState = !wonState;
-      wonBtn.classList.toggle('active', wonState);
-    };
-    periodRow.appendChild(wonBtn);
     item.appendChild(periodRow);
+
+    const statusLabel = document.createElement('p');
+    statusLabel.className = 'field-label';
+    statusLabel.style.margin = '8px 0 4px';
+    statusLabel.textContent = 'Project status';
+    item.appendChild(statusLabel);
+
+    let selectedDocStatus = getDocStatus(doc);
+    const statusGroup = document.createElement('div');
+    statusGroup.className = 'btn-group account-doc-status-group';
+    [['won', 'Won'], ['working', 'Working'], ['stalled', 'Stalled'], ['lost', 'Lost']].forEach(([val, label]) => {
+      const sBtn = document.createElement('button');
+      sBtn.type = 'button';
+      sBtn.className = 'btn-group-option status-' + val + (selectedDocStatus === val ? ' active' : '');
+      sBtn.textContent = label;
+      sBtn.onclick = () => {
+        selectedDocStatus = (selectedDocStatus === val) ? '' : val;
+        statusGroup.querySelectorAll('.btn-group-option').forEach(x => x.classList.remove('active'));
+        if (selectedDocStatus === val) sBtn.classList.add('active');
+      };
+      statusGroup.appendChild(sBtn);
+    });
+    item.appendChild(statusGroup);
 
     const btnRow = document.createElement('div');
     btnRow.className = 'account-doc-edit-btns';
@@ -2252,7 +2329,8 @@
       doc.value = rawValue ? parseFloat(rawValue) : 0;
       doc.quarter = selectedQuarter;
       doc.year = parseYearInput(yearSelect.value);
-      doc.won = wonState;
+      doc.status = selectedDocStatus;
+      delete doc.won;
       editingDocIds.delete(doc.id);
       touchAccountActivity(acc);
       await saveAccounts();
@@ -2335,22 +2413,30 @@
       });
     }
 
+    const isEditingSomethingInThisAccount = docs.some(d => editingDocIds.has(d.id));
+
     const addRow = document.createElement('div');
     addRow.className = 'account-doc-add-row';
     const titleInput = document.createElement('input');
     titleInput.type = 'text';
     titleInput.placeholder = 'Project name, e.g. MI Gap Analysis';
+    addRow.appendChild(titleInput);
+    panel.appendChild(addRow);
+
+    const extraFieldsWrap = document.createElement('div');
+    extraFieldsWrap.className = 'account-doc-add-extra' + (isEditingSomethingInThisAccount ? ' collapsed' : '');
+
     const urlInput = document.createElement('input');
     urlInput.type = 'text';
     urlInput.placeholder = 'SharePoint, Teams, or Drive link';
+    urlInput.className = 'account-doc-add-extra-input';
     const valueInput = document.createElement('input');
     valueInput.type = 'text';
     valueInput.inputMode = 'decimal';
     valueInput.placeholder = 'Value (optional), e.g. 25000';
-    addRow.appendChild(titleInput);
-    addRow.appendChild(urlInput);
-    addRow.appendChild(valueInput);
-    panel.appendChild(addRow);
+    valueInput.className = 'account-doc-add-extra-input';
+    extraFieldsWrap.appendChild(urlInput);
+    extraFieldsWrap.appendChild(valueInput);
 
     // Which quarter/year this project counts toward, separate from when
     // it's actually being logged, since work often starts well ahead of
@@ -2383,18 +2469,38 @@
     yearSelect.className = 'account-doc-year-select';
     yearSelect.value = nowYear;
     periodRow.appendChild(yearSelect);
+    extraFieldsWrap.appendChild(periodRow);
 
-    let newDocWon = false;
-    const wonBtn = document.createElement('button');
-    wonBtn.type = 'button';
-    wonBtn.className = 'account-doc-won-toggle';
-    wonBtn.textContent = 'Won';
-    wonBtn.onclick = () => {
-      newDocWon = !newDocWon;
-      wonBtn.classList.toggle('active', newDocWon);
-    };
-    periodRow.appendChild(wonBtn);
-    panel.appendChild(periodRow);
+    const statusLabel = document.createElement('p');
+    statusLabel.className = 'field-label';
+    statusLabel.style.margin = '8px 0 4px';
+    statusLabel.textContent = 'Project status (optional)';
+    extraFieldsWrap.appendChild(statusLabel);
+
+    let newDocStatus = '';
+    const statusGroup = document.createElement('div');
+    statusGroup.className = 'btn-group account-doc-status-group';
+    [['won', 'Won'], ['working', 'Working'], ['stalled', 'Stalled'], ['lost', 'Lost']].forEach(([val, label]) => {
+      const sBtn = document.createElement('button');
+      sBtn.type = 'button';
+      sBtn.className = 'btn-group-option status-' + val;
+      sBtn.textContent = label;
+      sBtn.onclick = () => {
+        newDocStatus = (newDocStatus === val) ? '' : val;
+        statusGroup.querySelectorAll('.btn-group-option').forEach(x => x.classList.remove('active'));
+        if (newDocStatus === val) sBtn.classList.add('active');
+      };
+      statusGroup.appendChild(sBtn);
+    });
+    extraFieldsWrap.appendChild(statusGroup);
+
+    panel.appendChild(extraFieldsWrap);
+
+    if (isEditingSomethingInThisAccount) {
+      const revealOnFocus = () => extraFieldsWrap.classList.remove('collapsed');
+      titleInput.addEventListener('focus', revealOnFocus);
+      titleInput.addEventListener('click', revealOnFocus);
+    }
 
     const addDocBtn = document.createElement('button');
     addDocBtn.className = 'account-doc-add-btn';
@@ -2413,14 +2519,14 @@
         value: value,
         year: parseYearInput(yearSelect.value),
         quarter: selectedQuarter,
-        won: newDocWon,
+        status: newDocStatus,
         loggedAt: isoDate(new Date())
       });
       titleInput.value = '';
       urlInput.value = '';
       valueInput.value = '';
-      newDocWon = false;
-      wonBtn.classList.remove('active');
+      newDocStatus = '';
+      statusGroup.querySelectorAll('.btn-group-option').forEach(x => x.classList.remove('active'));
       touchAccountActivity(acc);
       await saveAccounts();
       renderAccountsList();
@@ -3213,8 +3319,8 @@
     exportAccountsBtn.onclick = () => {
       const currentYear = new Date().getFullYear();
 
-      const summaryRows = [['Account', 'Status', 'YTD Value', 'All-Time Value', 'Won Value', 'Projects']];
-      const projectRows = [['Account', 'Status', 'Project', 'Value', 'Won', 'Quarter', 'Year', 'Link']];
+      const summaryRows = [['Account', 'Account Status', 'YTD Value', 'All-Time Value', 'Won Value', 'Projects']];
+      const projectRows = [['Account', 'Account Status', 'Project', 'Value', 'Project Status', 'Quarter', 'Year', 'Link']];
 
       accountsList.forEach(acc => {
         if (acc.deleted) return;
@@ -3231,7 +3337,7 @@
             acc.status || '',
             doc.title || '',
             Number(doc.value) || 0,
-            doc.won ? 'Yes' : 'No',
+            getDocStatus(doc),
             q ? ('Q' + q) : '',
             getDocYear(doc),
             doc.url || ''
